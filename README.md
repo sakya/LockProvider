@@ -5,6 +5,8 @@ A gRPC server to provide FIFO named locks
 ### Status
 Get the status of the server.
 
+Proto file: [here](https://github.com/sakya/LockProvider/blob/main/LockProviderApi/Protos/lock.proto)
+
 Request:
 ```json
 {}
@@ -61,7 +63,16 @@ Response:
   "timeStamp": "2025-06-13T16:47:58.6890059Z"
 }
 ```
-
+If the lock cannot be acquired the `error` contains the error message
+```json
+{
+  "owner": "test",
+  "name": "test",
+  "result": "False",
+  "error": "Timeout",
+  "timeStamp": "2025-06-13T16:56:18.3054261Z"
+}
+```
 ### IsLocked
 Check if a name is locked
 
