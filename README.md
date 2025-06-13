@@ -79,6 +79,7 @@ Check if a name is locked
 Request:
 ```json
 {
+  "owner": "test",  
   "name": "test"
 }
 ```
@@ -86,6 +87,7 @@ Request:
 Response:
 ```json
 {
+  "owner": "test",  
   "name": "test",
   "result": "True",
   "timeStamp": "2025-06-13T16:50:00.7567875Z"
@@ -98,6 +100,7 @@ Release a lock
 Request:
 ```json
 {
+  "owner": "test",  
   "name": "test"
 }
 ```
@@ -105,6 +108,7 @@ Request:
 Response:
 ```json
 {
+  "owner": "test",  
   "name": "test",
   "result": "True",
   "timeStamp": "2025-06-13T16:45:20.4941284Z"
@@ -114,6 +118,7 @@ Response:
 If the lock cannot be released (i.e. the lock was not found)
 ```json
 {
+  "owner": "test",  
   "name": "test",
   "result": "False",
   "error": "NotFound",

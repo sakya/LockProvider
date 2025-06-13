@@ -58,6 +58,7 @@ public class GrpcServer : LockProviderGrpc.LockProvider.LockProviderBase
     {
         return new LockResponse()
         {
+            Owner = request.Owner,
             Name = request.Name,
             Result = (await LockProvider.IsLocked(request.Owner, request.Name)).ToString(),
             TimeStamp = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture)
@@ -75,6 +76,7 @@ public class GrpcServer : LockProviderGrpc.LockProvider.LockProviderBase
                 _logger.LogInformation($"Released lock '{request.Name}', elapsed: {sw.Elapsed}");
                 return new LockResponse()
                 {
+                    Owner = request.Owner,
                     Name = request.Name,
                     Result = true.ToString(),
                     TimeStamp = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture)
@@ -83,6 +85,7 @@ public class GrpcServer : LockProviderGrpc.LockProvider.LockProviderBase
                 _logger.LogWarning($"Lock '{request.Name}' not found");
                 return new LockResponse()
                 {
+                    Owner = request.Owner,
                     Name = request.Name,
                     Result = false.ToString(),
                     TimeStamp = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture),
@@ -92,6 +95,7 @@ public class GrpcServer : LockProviderGrpc.LockProvider.LockProviderBase
         } catch (Exception ex) {
             return new LockResponse()
             {
+                Owner = request.Owner,
                 Name = request.Name,
                 Result = false.ToString(),
                 Error = ex.Message,
