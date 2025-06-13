@@ -1,0 +1,52 @@
+﻿syntax = "proto3";
+option csharp_namespace = "LockProviderGrpc";
+
+package LockProvider;
+
+service LockProvider {
+  rpc Status (empty) returns (StatusResponse);
+  rpc LocksList (empty) returns (LocksListResponse);
+  rpc Acquire (LockAcquireRequest) returns (LockResponse);
+  rpc IsLocked (LockRequest) returns (LockResponse);
+  rpc Release (LockRequest) returns (LockResponse);
+}
+
+message empty {
+
+}
+
+message StatusResponse {
+  string serverVersion = 1;
+  string uptime = 2;
+  int32 locks = 3;
+  int32 waitingLocks = 4;
+  string timeStamp = 5;
+}
+
+message LockAcquireRequest {
+  string name = 1;
+  string owner = 2;
+  int32 timeout = 3;
+}
+
+message LockRequest {
+  string name = 1;
+}
+
+message LockResponse {
+  string name = 1;
+  string result = 2;
+  string error = 3;
+  string timeStamp = 4;
+}
+
+
+message LockInfo {
+  string name = 1;
+  string owner = 2;
+  string acquiredAt = 3;
+}
+
+message LocksListResponse {
+  repeated LockInfo locks = 1;
+}

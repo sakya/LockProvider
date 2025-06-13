@@ -1,0 +1,10 @@
+﻿services:
+  lockproviderapi:
+    image: lockprovider
+    restart: unless-stopped
+    ports:
+      - "5200:5000"
+    build:
+      context: .
+      dockerfile: LockProviderApi/Dockerfile
+
