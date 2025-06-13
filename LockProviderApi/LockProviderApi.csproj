@@ -11,7 +11,7 @@
         <AssemblyVersion>1.0.0</AssemblyVersion>
         <Copyright>Copyright © 2025, Paolo Iommarini</Copyright>
         <Authors>Paolo Iommarini</Authors>
-        <Description>A Grpc server to provide named locks</Description>
+        <Description>A gRPC server to provide named locks</Description>
     </PropertyGroup>
 
     <ItemGroup>

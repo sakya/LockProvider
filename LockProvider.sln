@@ -9,6 +9,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{7BDF0C1C-9D4D-4B13-9952-894562BF462D}"
 	ProjectSection(SolutionItems) = preProject
 		compose.yaml = compose.yaml
+		README.md = README.md
+		publish.bat = publish.bat
 	EndProjectSection
 EndProject
 Global
