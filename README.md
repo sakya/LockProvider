@@ -34,9 +34,9 @@ Response:
   "locks": [
 	{
       "name": "test",
-	  "owner": "test",
-	  "acquiredAt": "2025-06-13T16:41:46.0393747Z"
-	}
+      "owner": "test",
+      "acquiredAt": "2025-06-13T16:41:46.0393747Z"
+    }
   ]
 }
 ```
