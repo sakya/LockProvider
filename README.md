@@ -110,3 +110,13 @@ Response:
   "timeStamp": "2025-06-13T16:45:20.4941284Z"
 }
 ```
+
+If the lock cannot be released (i.e. the lock was not found)
+```json
+{
+  "name": "test",
+  "result": "False",
+  "error": "NotFound",
+  "timeStamp": "2025-06-13T17:06:55.1440345Z"
+}
+```

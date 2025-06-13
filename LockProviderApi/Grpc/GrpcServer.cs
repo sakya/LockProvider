@@ -73,8 +73,21 @@ public class GrpcServer : LockProviderGrpc.LockProvider.LockProviderBase
             sw.Stop();
             if (res) {
                 _logger.LogInformation($"Released lock '{request.Name}', elapsed: {sw.Elapsed}");
+                return new LockResponse()
+                {
+                    Name = request.Name,
+                    Result = true.ToString(),
+                    TimeStamp = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture)
+                };
             } else {
                 _logger.LogWarning($"Lock '{request.Name}' not found");
+                return new LockResponse()
+                {
+                    Name = request.Name,
+                    Result = false.ToString(),
+                    TimeStamp = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture),
+                    Error = "NotFound"
+                };
             }
         } catch (Exception ex) {
             return new LockResponse()
@@ -85,13 +98,6 @@ public class GrpcServer : LockProviderGrpc.LockProvider.LockProviderBase
                 TimeStamp = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture)
             };
         }
-
-        return new LockResponse()
-        {
-            Name = request.Name,
-            Result = true.ToString(),
-            TimeStamp = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture)
-        };
     }
 
     public override async Task<StatusResponse> Status(empty request, ServerCallContext context)
