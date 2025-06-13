@@ -43,8 +43,8 @@ message LockResponse {
 
 
 message LockInfo {
-  string name = 1;
-  string owner = 2;
+  string owner = 1;
+  string name = 2;
   string acquiredAt = 3;
 }
 

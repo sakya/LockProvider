@@ -34,9 +34,9 @@ Response:
 ```json
 {
   "locks": [
-	{
-      "name": "test",
+    {
       "owner": "test",
+      "name": "test",
       "acquiredAt": "2025-06-13T16:41:46.0393747Z"
     }
   ]
@@ -63,7 +63,7 @@ Response:
   "timeStamp": "2025-06-13T16:47:58.6890059Z"
 }
 ```
-If the lock cannot be acquired the `error` contains the error message
+If the lock cannot be acquired the `error` property contains the error message
 ```json
 {
   "owner": "test",
