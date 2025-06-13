@@ -34,10 +34,11 @@ message LockRequest {
 }
 
 message LockResponse {
-  string name = 1;
-  string result = 2;
-  string error = 3;
-  string timeStamp = 4;
+  string owner = 1;
+  string name = 2;
+  string result = 3;
+  string error = 4;
+  string timeStamp = 5;
 }
 
 

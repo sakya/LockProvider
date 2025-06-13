@@ -28,6 +28,7 @@ public class GrpcServer : LockProviderGrpc.LockProvider.LockProviderBase
         } catch (TimeoutException) {
             return new LockResponse()
             {
+                Owner = request.Owner,
                 Name = request.Name,
                 Result = false.ToString(),
                 Error = "Timeout",
@@ -36,6 +37,7 @@ public class GrpcServer : LockProviderGrpc.LockProvider.LockProviderBase
         } catch (Exception ex) {
             return new LockResponse()
             {
+                Owner = request.Owner,
                 Name = request.Name,
                 Result = false.ToString(),
                 Error = ex.Message,
@@ -45,6 +47,7 @@ public class GrpcServer : LockProviderGrpc.LockProvider.LockProviderBase
 
         return new LockResponse()
         {
+            Owner = request.Owner,
             Name = request.Name,
             Result = true.ToString(),
             TimeStamp = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture)
