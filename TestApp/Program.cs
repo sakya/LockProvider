@@ -35,7 +35,7 @@ class Program
             Console.WriteLine($"[{id}]Lock '{lockName}' acquired in {sw.Elapsed}, Locks: {await LockProvider.GetLocksCount()}, Waiting: {await LockProvider.GetWaitingLocksCount()}");
             await Task.Delay(Random.Shared.Next(0, 1000));
             Console.WriteLine($"[{id}]Releasing lock '{lockName}'");
-            await LockProvider.ReleaseLock(lockName);
+            await LockProvider.ReleaseLock("TestApp", lockName);
         } catch (Exception ex) {
             Console.WriteLine($"[{id}]Lock '{lockName}' failed: {ex.Message}");
             //if (!string.IsNullOrEmpty(ex.StackTrace))

@@ -24,6 +24,8 @@ public class LockProvider : IDisposable
             Semaphore = semaphore;
         }
 
+        public string Key => GetKey(Owner, Name);
+
         public FifoSemaphore Semaphore { get; set; }
 
         public int CurrentCount => Semaphore.CurrentCount;
@@ -36,6 +38,11 @@ public class LockProvider : IDisposable
         public void Release()
         {
             Semaphore.Release();
+        }
+
+        public static string GetKey(string owner, string name)
+        {
+            return $"{owner}:{name}";
         }
     }
 
@@ -72,18 +79,23 @@ public class LockProvider : IDisposable
     /// <summary>
     /// Returns true if a name is locked
     /// </summary>
+    /// <param name="owner">The lock owner</param>
     /// <param name="name">The lock name</param>
     /// <returns></returns>
     /// <exception cref="ArgumentException"></exception>
-    public async Task<bool> IsLocked(string name)
+    public async Task<bool> IsLocked(string owner, string name)
     {
+        owner = owner.Trim();
+        if (string.IsNullOrEmpty(owner)) {
+            throw new ArgumentException("Owner cannot be empty");
+        }
         name = name.Trim();
         if (string.IsNullOrEmpty(name)) {
             throw new ArgumentException("Name cannot be empty");
         }
 
         await _mainLock.WaitAsync();
-        var res = _locks.ContainsKey(name);
+        var res = _locks.ContainsKey(SemaphoreInfoExtended.GetKey(owner, name));
         _mainLock.Release();
         return res;
     }
@@ -91,7 +103,7 @@ public class LockProvider : IDisposable
     /// <summary>
     /// Acquire a named lock waiting a maximum time
     /// </summary>
-    /// <param name="owner">The semaphore owner</param>
+    /// <param name="owner">The lock owner</param>
     /// <param name="name">The lock name</param>
     /// <param name="timeout">The timeout in seconds</param>
     /// <returns></returns>
@@ -99,20 +111,21 @@ public class LockProvider : IDisposable
     /// <exception cref="TimeoutException"></exception>
     public async Task<bool> AcquireLock(string owner, string name, int timeout)
     {
-        name = name.Trim();
-        if (string.IsNullOrEmpty(name)) {
-            throw new ArgumentException("Name cannot be empty");
-        }
         owner = owner.Trim();
         if (string.IsNullOrEmpty(owner)) {
             throw new ArgumentException("Owner cannot be empty");
+        }
+        name = name.Trim();
+        if (string.IsNullOrEmpty(name)) {
+            throw new ArgumentException("Name cannot be empty");
         }
         if (timeout <= 0) {
             throw new ArgumentException("Timeout must be greater or equal zero");
         }
 
+        var key = SemaphoreInfoExtended.GetKey(owner, name);
         await _waitingLocksLock.WaitAsync();
-        _waitingLocks.Add(name);
+        _waitingLocks.Add(key);
         _waitingLocksLock.Release();
 
         SemaphoreInfoExtended? semaphore;
@@ -120,9 +133,9 @@ public class LockProvider : IDisposable
 
         await _mainLock.WaitAsync();
         try {
-            if (!_locks.TryGetValue(name, out semaphore)) {
+            if (!_locks.TryGetValue(key, out semaphore)) {
                 semaphore = new SemaphoreInfoExtended(owner, name, new FifoSemaphore(1, 1));
-                _locks[name] = semaphore;
+                _locks[semaphore.Key] = semaphore;
                 createdNew = true;
             }
         } finally {
@@ -132,19 +145,19 @@ public class LockProvider : IDisposable
         if (!await semaphore.WaitAsync(TimeSpan.FromSeconds(timeout))) {
             if (createdNew) {
                 await _mainLock.WaitAsync();
-                _locks.Remove(name);
+                _locks.Remove(key);
                 _mainLock.Release();
             }
 
             await _waitingLocksLock.WaitAsync();
-            _waitingLocks.Remove(name);
+            _waitingLocks.Remove(key);
             _waitingLocksLock.Release();
 
             throw new TimeoutException($"Lock '{name}' timed out");
         }
 
         await _waitingLocksLock.WaitAsync();
-        _waitingLocks.Remove(name);
+        _waitingLocks.Remove(key);
         _waitingLocksLock.Release();
 
         return true;
@@ -153,11 +166,16 @@ public class LockProvider : IDisposable
     /// <summary>
     /// Release a lock
     /// </summary>
+    /// <param name="owner">The lock owner</param>
     /// <param name="name">The lock name</param>
     /// <returns></returns>
     /// <exception cref="ArgumentException"></exception>
-    public async Task<bool> ReleaseLock(string name)
+    public async Task<bool> ReleaseLock(string owner, string name)
     {
+        owner = owner.Trim();
+        if (string.IsNullOrEmpty(owner)) {
+            throw new ArgumentException("Owner cannot be empty");
+        }
         name = name.Trim();
         if (string.IsNullOrEmpty(name)) {
             throw new ArgumentException("Name cannot be empty");
@@ -165,10 +183,10 @@ public class LockProvider : IDisposable
 
         await _mainLock.WaitAsync();
         try {
-            if (_locks.TryGetValue(name, out var semaphore)) {
+            if (_locks.TryGetValue(SemaphoreInfoExtended.GetKey(owner, name), out var semaphore)) {
                 semaphore.Release();
                 if (semaphore.CurrentCount == 1) {
-                    _locks.Remove(name);
+                    _locks.Remove(semaphore.Key);
                 }
             } else {
                 return false;

@@ -24,13 +24,14 @@ message StatusResponse {
 }
 
 message LockAcquireRequest {
-  string name = 1;
-  string owner = 2;
+  string owner = 1;
+  string name = 2;
   int32 timeout = 3;
 }
 
 message LockRequest {
-  string name = 1;
+  string owner = 1;
+  string name = 2;
 }
 
 message LockResponse {

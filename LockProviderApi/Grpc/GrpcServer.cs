@@ -59,7 +59,7 @@ public class GrpcServer : LockProviderGrpc.LockProvider.LockProviderBase
         return new LockResponse()
         {
             Name = request.Name,
-            Result = (await LockProvider.IsLocked(request.Name)).ToString(),
+            Result = (await LockProvider.IsLocked(request.Owner, request.Name)).ToString(),
             TimeStamp = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture)
         };
     }
@@ -69,7 +69,7 @@ public class GrpcServer : LockProviderGrpc.LockProvider.LockProviderBase
         try {
             var sw = new Stopwatch();
             sw.Start();
-            var res = await LockProvider.ReleaseLock(request.Name);
+            var res = await LockProvider.ReleaseLock(request.Owner, request.Name);
             sw.Stop();
             if (res) {
                 _logger.LogInformation($"Released lock '{request.Name}', elapsed: {sw.Elapsed}");
