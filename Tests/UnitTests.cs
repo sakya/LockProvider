@@ -48,4 +48,48 @@ public class Tests
         var ex = Assert.ThrowsAsync<TimeoutException>(async () => await lp.AcquireLock("Test", "lock_1", 1));
         Assert.That(ex, Is.Not.EqualTo(null));
     }
+
+    [Test]
+    public async Task ConcurrentAcquireAndRelease()
+    {
+        var lp = new LockProvider.LockProvider();
+        const string owner = "test-owner";
+        const string lockName = "resource-lock";
+        const int concurrency = 20;
+        const int timeoutSeconds = 5;
+
+        var exclusiveCounter = 0;
+        var maxExclusiveCount = 0;
+
+        var tasks = new Task[concurrency];
+
+        for (var i = 0; i < concurrency; i++) {
+            tasks[i] = Task.Run(async () =>
+            {
+                var acquired = await lp.AcquireLock(owner, lockName, timeoutSeconds);
+                Assert.That(acquired, Is.True, "Failed to acquire lock");
+
+                try {
+                    var current = Interlocked.Increment(ref exclusiveCounter);
+                    Assert.That(current, Is.EqualTo(1));
+
+                    int prevMax;
+                    do {
+                        prevMax = maxExclusiveCount;
+                        if (current <= prevMax) break;
+                    } while (Interlocked.CompareExchange(ref maxExclusiveCount, current, prevMax) !=
+                             prevMax);
+
+                    await Task.Delay(50);
+                } finally {
+                    Interlocked.Decrement(ref exclusiveCounter);
+                    var released = await lp.ReleaseLock(owner, lockName);
+                    Assert.That(released, Is.True, "Failed to release lock");
+                }
+            });
+        }
+        await Task.WhenAll(tasks);
+
+        Assert.That(maxExclusiveCount, Is.EqualTo(1));
+    }
 }
