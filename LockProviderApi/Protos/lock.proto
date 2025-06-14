@@ -5,10 +5,11 @@ package LockProvider;
 
 service LockProvider {
   rpc Status (empty) returns (StatusResponse);
-  rpc LocksList (empty) returns (LocksListResponse);
+  rpc List (LocksListRequest) returns (LocksListResponse);
   rpc Acquire (LockAcquireRequest) returns (LockResponse);
   rpc IsLocked (LockRequest) returns (LockResponse);
   rpc Release (LockRequest) returns (LockResponse);
+  rpc ReleaseMany (LockRequest) returns (LocksListResponse);
 }
 
 message empty {
@@ -21,6 +22,8 @@ message StatusResponse {
   int32 locks = 3;
   int32 waitingLocks = 4;
   string timeStamp = 5;
+  string result = 6;
+  string error = 7;
 }
 
 message LockAcquireRequest {
@@ -42,6 +45,10 @@ message LockResponse {
   string timeStamp = 5;
 }
 
+message LocksListRequest {
+  string owner = 1;
+  string name = 2;
+}
 
 message LockInfo {
   string owner = 1;
@@ -50,5 +57,11 @@ message LockInfo {
 }
 
 message LocksListResponse {
-  repeated LockInfo locks = 1;
+  string owner = 1;
+  string name = 2;
+  string result = 3;
+  string error = 4;
+  int32 count = 5;
+  repeated LockInfo locks = 6;
+  string timeStamp = 7;
 }

@@ -8,7 +8,7 @@ public class Program
 
     public static void Main(string[] args)
     {
-        ThreadPool.GetMaxThreads(out var maxWorker, out var maxIo);
+        ThreadPool.GetMaxThreads(out _, out var maxIo);
         ThreadPool.SetMinThreads(workerThreads: 2000, completionPortThreads: maxIo);
         var builder = WebApplication.CreateBuilder(args);
 
@@ -25,7 +25,7 @@ public class Program
         {
             options.EnableDetailedErrors = false;
             options.MaxReceiveMessageSize = 1 * 1024 * 1024;
-            options.MaxSendMessageSize = 1 * 1024 * 1024;
+            options.MaxSendMessageSize = 4 * 1024 * 1024;
         });
         builder.Services.AddGrpcReflection();
 

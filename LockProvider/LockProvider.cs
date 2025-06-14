@@ -1,4 +1,6 @@
-﻿namespace LockProvider;
+﻿using System.Text.RegularExpressions;
+
+namespace LockProvider;
 
 public class LockProvider : IDisposable
 {
@@ -135,7 +137,7 @@ public class LockProvider : IDisposable
         try {
             if (!_locks.TryGetValue(key, out semaphore)) {
                 semaphore = new SemaphoreInfoExtended(owner, name, new FifoSemaphore(1, 1));
-                _locks[semaphore.Key] = semaphore;
+                _locks[key] = semaphore;
                 createdNew = true;
             }
         } finally {
@@ -198,18 +200,39 @@ public class LockProvider : IDisposable
         return true;
     }
 
-    public async Task<List<SemaphoreInfo>> LocksList()
+    public async Task<List<SemaphoreInfo>> LocksList(string owner, string? nameRegex = null)
     {
+        owner = owner.Trim();
+        if (string.IsNullOrEmpty(owner)) {
+            throw new ArgumentException("Owner cannot be empty");
+        }
+
         var res = new List<SemaphoreInfo>();
         await _mainLock.WaitAsync();
         var locks = _locks.Values.ToList();
         _mainLock.Release();
 
+        Regex? regex = null;
+        if (!string.IsNullOrEmpty(nameRegex)) {
+            if (!nameRegex.StartsWith("^"))
+                nameRegex = $"^{nameRegex}";
+            if (!nameRegex.EndsWith("$"))
+                nameRegex = $"{nameRegex}$";
+            regex = new Regex(nameRegex);
+        }
+
         foreach (var s in locks) {
+            if (s.Owner != owner)
+                continue;
+            if (regex != null && !regex.Match(s.Name).Success)
+                continue;
+
             res.Add(new SemaphoreInfo(s.Owner, s.Name, s.AcquiredAt));
         }
 
-        return res;
+        return res
+            .OrderBy(l => l.AcquiredAt)
+            .ToList();
     }
 
     public void Dispose()

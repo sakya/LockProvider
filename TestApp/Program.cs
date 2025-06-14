@@ -7,7 +7,7 @@ class Program
     private static readonly List<string> LockNames = new();
     private static readonly LockProvider.LockProvider LockProvider = new();
 
-    static void Main(string[] args)
+    static async Task Main(string[] args)
     {
         const int numberOfLocks = 10;
         const int numberOfThreads = 100;
@@ -21,6 +21,9 @@ class Program
             tasks.Add(GetLock(i));
         }
         Task.WaitAll(tasks.ToArray());
+
+        Console.WriteLine();
+        Console.WriteLine($"Locks: {await LockProvider.GetLocksCount()}");
     }
 
     private static async Task<bool> GetLock(int id)

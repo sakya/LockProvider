@@ -26,6 +26,7 @@ public class GrpcServer : LockProviderGrpc.LockProvider.LockProviderBase
             sw.Stop();
             _logger.LogInformation($"Acquired lock '{request.Name}', elapsed: {sw.Elapsed}");
         } catch (TimeoutException) {
+            _logger.LogWarning($"Error acquiring lock '{request.Name}' ({request.Owner}): Timeout ({request.Timeout} seconds)");
             return new LockResponse()
             {
                 Owner = request.Owner,
@@ -35,6 +36,7 @@ public class GrpcServer : LockProviderGrpc.LockProvider.LockProviderBase
                 TimeStamp = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture)
             };
         } catch (Exception ex) {
+            _logger.LogWarning($"Error acquiring lock '{request.Name}' ({request.Owner}): {ex.Message}");
             return new LockResponse()
             {
                 Owner = request.Owner,
@@ -81,19 +83,59 @@ public class GrpcServer : LockProviderGrpc.LockProvider.LockProviderBase
                     Result = true.ToString(),
                     TimeStamp = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture)
                 };
-            } else {
-                _logger.LogWarning($"Lock '{request.Name}' not found");
-                return new LockResponse()
-                {
-                    Owner = request.Owner,
-                    Name = request.Name,
-                    Result = false.ToString(),
-                    TimeStamp = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture),
-                    Error = "NotFound"
-                };
             }
-        } catch (Exception ex) {
+
+            _logger.LogWarning($"Error releasing lock '{request.Name}' ({request.Owner}): not found");
             return new LockResponse()
+            {
+                Owner = request.Owner,
+                Name = request.Name,
+                Result = false.ToString(),
+                TimeStamp = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture),
+                Error = "NotFound"
+            };
+        } catch (Exception ex) {
+            _logger.LogWarning($"Error releasing lock '{request.Name}' ({request.Owner}): {ex.Message}");
+            return new LockResponse()
+            {
+                Owner = request.Owner,
+                Name = request.Name,
+                Result = false.ToString(),
+                Error = ex.Message,
+                TimeStamp = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture)
+            };
+        }
+    }
+
+    public override async Task<LocksListResponse> ReleaseMany(LockRequest request, ServerCallContext context)
+    {
+        try {
+            var res = new LocksListResponse()
+            {
+                Owner = request.Owner,
+                Name = request.Name,
+                TimeStamp = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture)
+            };
+            var locks = await LockProvider.LocksList(request.Owner, request.Name);
+            foreach (var l in locks) {
+                try {
+                    if (await LockProvider.ReleaseLock(l.Owner, l.Name)) {
+                        res.Locks.Add(new LockInfo()
+                        {
+                            Owner = l.Owner,
+                            Name = l.Name,
+                            AcquiredAt = l.AcquiredAt.ToString("o", CultureInfo.InvariantCulture)
+                        });
+                    }
+                } catch (Exception ex) {
+                    _logger.LogWarning($"Error releasing lock '{request.Name}' ({request.Owner}): {ex.Message}");
+                }
+            }
+
+            res.Count = res.Locks.Count;
+            return res;
+        } catch (Exception ex) {
+            return new LocksListResponse()
             {
                 Owner = request.Owner,
                 Name = request.Name,
@@ -106,28 +148,56 @@ public class GrpcServer : LockProviderGrpc.LockProvider.LockProviderBase
 
     public override async Task<StatusResponse> Status(empty request, ServerCallContext context)
     {
-        return new StatusResponse()
-        {
-            ServerVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString(),
-            Uptime = $"{DateTime.UtcNow - Program.StartedAt}",
-            Locks = await LockProvider.GetLocksCount(),
-            WaitingLocks = await LockProvider.GetWaitingLocksCount(),
-            TimeStamp = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture)
-        };
+        try {
+            return new StatusResponse()
+            {
+                Result = true.ToString(),
+                ServerVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString(),
+                Uptime = $"{DateTime.UtcNow - Program.StartedAt}",
+                Locks = await LockProvider.GetLocksCount(),
+                WaitingLocks = await LockProvider.GetWaitingLocksCount(),
+                TimeStamp = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture)
+            };
+        } catch (Exception ex) {
+            return new StatusResponse()
+            {
+                Result = false.ToString(),
+                Error = ex.Message,
+                TimeStamp = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture)
+            };
+        }
     }
 
-    public override async Task<LocksListResponse> LocksList(empty request, ServerCallContext context)
+    public override async Task<LocksListResponse> List(LocksListRequest request, ServerCallContext context)
     {
-        var res = new LocksListResponse();
-        var locks = await LockProvider.LocksList();
-        foreach (var l in locks) {
-            res.Locks.Add(new LockInfo()
+        try {
+            var res = new LocksListResponse()
             {
-                Owner = l.Owner,
-                Name = l.Name,
-                AcquiredAt = l.AcquiredAt.ToString("o", CultureInfo.InvariantCulture)
-            });
+                Owner = request.Owner,
+                Name = request.Name,
+                TimeStamp = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture)
+            };
+            var locks = await LockProvider.LocksList(request.Owner, request.Name);
+            foreach (var l in locks) {
+                res.Locks.Add(new LockInfo()
+                {
+                    Owner = l.Owner,
+                    Name = l.Name,
+                    AcquiredAt = l.AcquiredAt.ToString("o", CultureInfo.InvariantCulture)
+                });
+            }
+
+            res.Count = res.Locks.Count;
+            return res;
+        } catch (Exception ex) {
+            return new LocksListResponse()
+            {
+                Owner = request.Owner,
+                Name = request.Name,
+                Result = false.ToString(),
+                Error = ex.Message,
+                TimeStamp = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture)
+            };
         }
-        return res;
     }
 }
