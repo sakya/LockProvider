@@ -26,11 +26,7 @@ public class LockProvider : IAsyncDisposable
             Semaphore = semaphore;
         }
 
-        public string Key => GetKey(Owner, Name);
-
         public FifoSemaphore Semaphore { get; set; }
-
-        public int CurrentCount => Semaphore.CurrentCount;
 
         public async Task<bool> WaitAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
         {
@@ -255,14 +251,17 @@ public class LockProvider : IAsyncDisposable
 
     private async ValueTask DisposeAsync(bool disposing)
     {
-        await _mainLock.WaitAsync();
-        try {
-            foreach (var kvp in _locks) {
-                kvp.Value.Release();
+        if (disposing) {
+            await _mainLock.WaitAsync();
+            try {
+                foreach (var kvp in _locks) {
+                    kvp.Value.Release();
+                }
+
+                _locks.Clear();
+            } finally {
+                _mainLock.Release();
             }
-            _locks.Clear();
-        } finally {
-            _mainLock.Release();
         }
     }
 }
