@@ -1,11 +1,11 @@
 # LockProvider
 A gRPC server to provide FIFO named locks
 
+Proto file: [here](https://github.com/sakya/LockProvider/blob/main/LockProviderApi/Protos/lock.proto)
+
 ## Methods
 ### Status
 Get the status of the server.
-
-Proto file: [here](https://github.com/sakya/LockProvider/blob/main/LockProviderApi/Protos/lock.proto)
 
 Request:
 ```json
@@ -22,24 +22,34 @@ Response:
   "timeStamp": "2025-06-13T16:42:51.8657848Z"
 }
 ```
-### LocksList
-Get a list of acquired locks
+### List
+Get a list of acquired locks.
+
+The owner must match exactly.\
+The name is a regex to filter locks
 
 Request:
 ```json
-{}
+{
+  "owner": "test",
+  "name": "*"  
+}
 ```
 
 Response:
 ```json
 {
+  "owner": "test",
+  "name": "*",
+  "count": 1,  
   "locks": [
     {
       "owner": "test",
       "name": "test",
       "acquiredAt": "2025-06-13T16:41:46.0393747Z"
     }
-  ]
+  ],
+  "timeStamp": "2025-06-13T16:41:42.0393747Z"
 }
 ```
 ### Acquire
@@ -115,7 +125,7 @@ Response:
 }
 ```
 
-If the lock cannot be released (i.e. the lock was not found)
+If the lock cannot be released (i.e., the lock was not found)
 ```json
 {
   "owner": "test",  
@@ -123,5 +133,36 @@ If the lock cannot be released (i.e. the lock was not found)
   "result": "False",
   "error": "NotFound",
   "timeStamp": "2025-06-13T17:06:55.1440345Z"
+}
+```
+
+### ReleaseMany
+Release multiple locks
+
+The owner must match exactly.\
+The name is a regex to filter locks
+
+Request:
+```json
+{
+  "owner": "test",  
+  "name": "*"
+}
+```
+
+Response:
+```json
+{
+  "owner": "test",
+  "name": "*",
+  "count": 1,
+  "locks": [
+    {
+      "owner": "test",
+      "name": "lock 1",
+      "acquiredAt": "2025-06-14T07:17:58.3147789Z"
+    }
+  ],
+  "timeStamp": "2025-06-14T07:17:59.1440345Z"  
 }
 ```

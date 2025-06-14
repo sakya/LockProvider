@@ -6,10 +6,11 @@ class Program
 {
     private static readonly List<string> LockNames = new();
     private static readonly LockProvider.LockProvider LockProvider = new();
+    private static readonly ManualResetEventSlim StartLine = new(false);
 
     static async Task Main(string[] args)
     {
-        const int numberOfLocks = 10;
+        const int numberOfLocks = 1;
         const int numberOfThreads = 100;
 
         for (var i = 0; i < numberOfLocks; i++) {
@@ -18,9 +19,12 @@ class Program
 
         var tasks = new List<Task>();
         for (var i = 0; i < numberOfThreads; i++) {
-            tasks.Add(GetLock(i));
+            var idx = i;
+            tasks.Add(Task.Run(() => GetLock(idx)));
         }
-        Task.WaitAll(tasks.ToArray());
+
+        StartLine.Set();
+        await Task.WhenAll(tasks.ToArray());
 
         Console.WriteLine();
         Console.WriteLine($"Locks: {await LockProvider.GetLocksCount()}");
@@ -28,6 +32,7 @@ class Program
 
     private static async Task<bool> GetLock(int id)
     {
+        StartLine.Wait();
         var lockName = LockNames[Random.Shared.Next(LockNames.Count)];
         try {
             Console.WriteLine($"[{id}]Acquiring lock '{lockName}'");
@@ -36,11 +41,11 @@ class Program
             await LockProvider.AcquireLock("TestApp", lockName, 10);
             sw.Stop();
             Console.WriteLine($"[{id}]Lock '{lockName}' acquired in {sw.Elapsed}, Locks: {await LockProvider.GetLocksCount()}, Waiting: {await LockProvider.GetWaitingLocksCount()}");
-            await Task.Delay(Random.Shared.Next(0, 1000));
+            await Task.Delay(500);
             Console.WriteLine($"[{id}]Releasing lock '{lockName}'");
             await LockProvider.ReleaseLock("TestApp", lockName);
         } catch (Exception ex) {
-            Console.WriteLine($"[{id}]Lock '{lockName}' failed: {ex.Message}");
+            Console.WriteLine($"[{id}]{ex.Message}");
             //if (!string.IsNullOrEmpty(ex.StackTrace))
             //    Console.WriteLine(ex.StackTrace);
             return false;
