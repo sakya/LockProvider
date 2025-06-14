@@ -26,8 +26,10 @@ class Program
         StartLine.Set();
         await Task.WhenAll(tasks.ToArray());
 
-        Console.WriteLine();
-        Console.WriteLine($"Locks: {await LockProvider.GetLocksCount()}");
+        if (await LockProvider.GetLocksCount() > 0) {
+            Console.WriteLine();
+            Console.WriteLine($"Error, locks count: {await LockProvider.GetLocksCount()}");
+        }
     }
 
     private static async Task<bool> GetLock(int id)
@@ -42,8 +44,8 @@ class Program
             sw.Stop();
             Console.WriteLine($"[{id}]Lock '{lockName}' acquired in {sw.Elapsed}, Locks: {await LockProvider.GetLocksCount()}, Waiting: {await LockProvider.GetWaitingLocksCount()}");
             await Task.Delay(500);
-            Console.WriteLine($"[{id}]Releasing lock '{lockName}'");
             await LockProvider.ReleaseLock("TestApp", lockName);
+            Console.WriteLine($"[{id}]Lock '{lockName}' released");
         } catch (Exception ex) {
             Console.WriteLine($"[{id}]{ex.Message}");
             //if (!string.IsNullOrEmpty(ex.StackTrace))

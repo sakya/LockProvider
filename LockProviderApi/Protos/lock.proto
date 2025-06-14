@@ -17,13 +17,13 @@ message empty {
 }
 
 message StatusResponse {
-  string serverVersion = 1;
-  string uptime = 2;
-  int32 locks = 3;
-  int32 waitingLocks = 4;
-  string timeStamp = 5;
-  string result = 6;
-  string error = 7;
+  string result = 1;
+  string serverVersion = 2;
+  string uptime = 3;
+  int32 locks = 4;
+  int32 waitingLocks = 5;
+  string error = 6;
+  string timeStamp = 7;
 }
 
 message LockAcquireRequest {

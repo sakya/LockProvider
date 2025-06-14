@@ -2,7 +2,7 @@
 
 namespace LockProvider;
 
-public class LockProvider : IDisposable
+public class LockProvider : IAsyncDisposable
 {
     public class SemaphoreInfo
     {
@@ -61,9 +61,11 @@ public class LockProvider : IDisposable
     public async Task<int> GetLocksCount()
     {
         await _mainLock.WaitAsync();
-        var res = _locks.Count;
-        _mainLock.Release();
-        return res;
+        try {
+            return _locks.Count;
+        } finally {
+            _mainLock.Release();
+        }
     }
 
     /// <summary>
@@ -73,9 +75,11 @@ public class LockProvider : IDisposable
     public async Task<int> GetWaitingLocksCount()
     {
         await _waitingLocksLock.WaitAsync();
-        var res = _waitingLocks.Count;
-        _waitingLocksLock.Release();
-        return res;
+        try {
+            return _waitingLocks.Count;
+        } finally {
+            _waitingLocksLock.Release();
+        }
     }
 
     /// <summary>
@@ -97,9 +101,11 @@ public class LockProvider : IDisposable
         }
 
         await _mainLock.WaitAsync();
-        var res = _locks.ContainsKey(SemaphoreInfoExtended.GetKey(owner, name));
-        _mainLock.Release();
-        return res;
+        try {
+            return _locks.ContainsKey(SemaphoreInfoExtended.GetKey(owner, name));
+        } finally {
+            _mainLock.Release();
+        }
     }
 
     /// <summary>
@@ -122,7 +128,7 @@ public class LockProvider : IDisposable
             throw new ArgumentException("Name cannot be empty");
         }
         if (timeout <= 0) {
-            throw new ArgumentException("Timeout must be greater or equal zero");
+            throw new ArgumentException("Timeout must be greater than zero");
         }
 
         var key = SemaphoreInfoExtended.GetKey(owner, name);
@@ -136,7 +142,8 @@ public class LockProvider : IDisposable
         await _mainLock.WaitAsync();
         try {
             if (!_locks.TryGetValue(key, out semaphore)) {
-                semaphore = new SemaphoreInfoExtended(owner, name, new FifoSemaphore(1, 1));
+                // The initial count is zero, the lock is acquired
+                semaphore = new SemaphoreInfoExtended(owner, name, new FifoSemaphore(0, 1));
                 _locks[key] = semaphore;
                 createdNew = true;
             }
@@ -144,23 +151,12 @@ public class LockProvider : IDisposable
             _mainLock.Release();
         }
 
-        if (!await semaphore.WaitAsync(TimeSpan.FromSeconds(timeout))) {
-            if (createdNew) {
-                await _mainLock.WaitAsync();
-                _locks.Remove(key);
-                _mainLock.Release();
-            }
-
-            await _waitingLocksLock.WaitAsync();
-            _waitingLocks.Remove(key);
-            _waitingLocksLock.Release();
-
+        if (!createdNew && !await semaphore.WaitAsync(TimeSpan.FromSeconds(timeout))) {
+            await RemoveFromWaitingLocks(key);
             throw new TimeoutException($"Lock '{name}' timed out");
         }
 
-        await _waitingLocksLock.WaitAsync();
-        _waitingLocks.Remove(key);
-        _waitingLocksLock.Release();
+        await RemoveFromWaitingLocks(key);
 
         return true;
     }
@@ -183,17 +179,22 @@ public class LockProvider : IDisposable
             throw new ArgumentException("Name cannot be empty");
         }
 
+        var key = SemaphoreInfoExtended.GetKey(owner, name);
         await _mainLock.WaitAsync();
+        await _waitingLocksLock.WaitAsync();
         try {
-            if (_locks.TryGetValue(SemaphoreInfoExtended.GetKey(owner, name), out var semaphore)) {
+            if (_locks.TryGetValue(key, out var semaphore)) {
                 semaphore.Release();
-                if (semaphore.CurrentCount == 1) {
-                    _locks.Remove(semaphore.Key);
+
+                var isWaiting = _waitingLocks.Contains(key);
+                if (!isWaiting) {
+                    _locks.Remove(key);
                 }
             } else {
                 return false;
             }
         } finally {
+            _waitingLocksLock.Release();
             _mainLock.Release();
         }
 
@@ -209,14 +210,18 @@ public class LockProvider : IDisposable
 
         var res = new List<SemaphoreInfo>();
         await _mainLock.WaitAsync();
-        var locks = _locks.Values.ToList();
-        _mainLock.Release();
+        List<SemaphoreInfoExtended> locks;
+        try {
+            locks = _locks.Values.ToList();
+        } finally {
+            _mainLock.Release();
+        }
 
         Regex? regex = null;
         if (!string.IsNullOrEmpty(nameRegex)) {
-            if (!nameRegex.StartsWith("^"))
+            if (!nameRegex.StartsWith('^'))
                 nameRegex = $"^{nameRegex}";
-            if (!nameRegex.EndsWith("$"))
+            if (!nameRegex.EndsWith('$'))
                 nameRegex = $"{nameRegex}$";
             regex = new Regex(nameRegex);
         }
@@ -235,18 +240,29 @@ public class LockProvider : IDisposable
             .ToList();
     }
 
-    public void Dispose()
+    private async Task RemoveFromWaitingLocks(string key)
     {
-        Dispose(true);
+        await _waitingLocksLock.WaitAsync();
+        _waitingLocks.Remove(key);
+        _waitingLocksLock.Release();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await DisposeAsync(true);
         GC.SuppressFinalize(this);
     }
 
-    protected virtual void Dispose(bool disposing)
+    private async ValueTask DisposeAsync(bool disposing)
     {
-        if (disposing) {
+        await _mainLock.WaitAsync();
+        try {
             foreach (var kvp in _locks) {
                 kvp.Value.Release();
             }
+            _locks.Clear();
+        } finally {
+            _mainLock.Release();
         }
     }
 }
