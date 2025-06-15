@@ -3,6 +3,16 @@ A gRPC server to provide FIFO named locks
 
 Proto file: [here](https://github.com/sakya/LockProvider/blob/main/LockProviderApi/Protos/lock.proto)
 
+## Run docker image
+Pul the image
+```shell
+docker pull paoloiommarini/lock-provider:latest
+```
+Run the container (in this example the server is reachable at `localhost:5200`)
+```shell
+docker run --name LockProvider -p 5200:5000 -d paoloiommarini/lock-provider
+```
+
 ## Methods
 ### Status
 Get the status of the server.
@@ -166,3 +176,164 @@ Response:
   "timeStamp": "2025-06-14T07:17:59.1440345Z"  
 }
 ```
+
+## Node.js quick start (TypeScript)
+- Create a new Node project
+  ```shell
+  mkdir lock-provider-quickstart
+  cd lock-provider-quickstart
+  mkdir src
+  pnpm init
+  pnpm add -D typescript @types/node
+  pnpm add --save @grpc/grpc-js @grpc/proto-loader @bufbuild/protobuf
+  pnpm install --save-dev grpc-tools grpc_tools_node_protoc_ts ts-proto
+  npx tsc --init
+  ```
+
+- Set the file `tsconfig.json` with this content
+  ```json
+  {
+    "compilerOptions": {
+      "target": "ES2020",
+      "module": "commonjs",
+      "outDir": "./dist",
+      "rootDir": "./src",
+      "strict": true,
+      "esModuleInterop": true
+    },
+    "include": ["src"]
+  }
+  ```
+
+- Edit the `scripts` section in the file `package.json`
+  ```json
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "nodemon --watch src --exec ts-node src/index.ts"
+  },
+  ```
+- Copy the  [proto file](https://github.com/sakya/LockProvider/blob/main/LockProviderApi/Protos/lock.proto) in the `lock-provider-quickstart` directory.\
+- Create the client
+  ```shell
+  npx protoc --plugin=protoc-gen-ts_proto=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=./src --ts_proto_opt=outputServices=grpc-js -I ./ ./lock-provider.proto
+  ```
+- Create the file `src/index.ts` with this content
+  ```typescript
+  import { ChannelCredentials } from "@grpc/grpc-js";
+  import { LockAcquireRequest, LockProviderClient, LockRequest, LockResponse, LocksListResponse } from "./lock-provider";
+  
+  const client = new LockProviderClient('localhost:5200', ChannelCredentials.createInsecure());
+  
+  function releaseMany(request: LockRequest): Promise<LocksListResponse> {
+    return new Promise((resolve, reject) => {
+      client.releaseMany(request, (err, response) => {
+        if (err) {
+          reject(err);
+        } else {
+          if (response.result !== 'True') {
+            reject(response.error);
+            return;
+          }
+          resolve(response);
+        }
+      });
+    });
+  }
+  
+  function acquireLock(request: LockAcquireRequest): Promise<LockResponse> {
+    return new Promise((resolve, reject) => {
+      client.acquire(request, (err, response) => {
+        if (err) {
+          console.error(`Lock ${request.name} acquire failed:`, err);
+          reject(err);
+        } else {
+          if (response.result !== 'True') {
+            console.error(`Lock ${request.name} acquire failed:`, response.error);
+            reject(response.error);
+            return;
+          }
+  
+          console.error(`Lock ${request.name} acquired`);
+          resolve(response);
+        }
+      });
+    });
+  }
+  
+  function releaseLock(request: LockRequest): Promise<LockResponse> {
+    return new Promise((resolve, reject) => {
+      client.release(request, (err, response) => {
+        if (err) {
+          console.error(`Lock ${request.name} release failed:`, err);
+          reject(err);
+        } else {
+          if (response.result !== 'True') {
+            console.error(`Lock ${request.name} release failed:`, response.error);
+            reject(response.error);
+            return;
+          }
+  
+          console.error(`Lock ${request.name} released`);
+          resolve(response);
+        }
+      });
+    });
+  }
+  
+  (async () => {
+    try {
+      const rsm = await releaseMany({
+        owner: 'lock_owner',
+        name: '*',
+      });
+      console.log(`Released ${rsm.count} locks`);
+  
+      await acquireLock({
+        owner: 'lock_owner',
+        name: 'lock_1',
+        timeout: 5
+      });
+  
+      await releaseLock({
+        owner: 'lock_owner',
+        name: 'lock_1'
+      })
+  
+      await acquireLock({
+        owner: 'lock_owner',
+        name: 'lock_2',
+        timeout: 5
+      });
+  
+      // This will fail after 5 seconds
+      await acquireLock({
+        owner: 'lock_owner',
+        name: 'lock_2',
+        timeout: 5
+      });
+    } catch (err) {
+      console.error('Exception:', err);
+    }
+  
+    client.close();
+    process.exit(0);
+  })();
+  ```
+- Build the project
+  ```shell
+  pnpm build
+  ```
+- Run the project
+  ```shell
+  pnpm start
+  ```
+- Expected output
+  ```shell
+  Released 0 locks
+  Lock lock_1 acquired
+  Lock lock_1 released
+  Lock lock_2 acquired
+  Lock lock_2 acquire failed: Timeout
+  Exception: Timeout
+  ```
