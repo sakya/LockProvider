@@ -225,7 +225,7 @@ public class LockProvider : IAsyncDisposable
         foreach (var s in locks) {
             if (s.Owner != owner)
                 continue;
-            if (regex != null && !regex.Match(s.Name).Success)
+            if (nameRegex != "*" && regex != null && !regex.Match(s.Name).Success)
                 continue;
 
             res.Add(new SemaphoreInfo(s.Owner, s.Name, s.AcquiredAt));

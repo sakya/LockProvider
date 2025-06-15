@@ -74,7 +74,7 @@ public class Tests
     }
 
     [Test]
-    public async Task LocksList_ReturnsCorrectLocksFilteredByOwnerAndNameRegex()
+    public async Task LocksList()
     {
         await using var lp = new LockProvider.LockProvider();
         const string owner1 = "owner1";
