@@ -114,7 +114,8 @@ public class GrpcServer : LockProviderGrpc.LockProvider.LockProviderBase
             {
                 Owner = request.Owner,
                 Name = request.Name,
-                TimeStamp = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture)
+                TimeStamp = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture),
+                Result = true.ToString()
             };
             var locks = await LockProvider.LocksList(request.Owner, request.Name);
             foreach (var l in locks) {
@@ -175,7 +176,8 @@ public class GrpcServer : LockProviderGrpc.LockProvider.LockProviderBase
             {
                 Owner = request.Owner,
                 Name = request.Name,
-                TimeStamp = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture)
+                TimeStamp = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture),
+                Result = true.ToString(),
             };
             var locks = await LockProvider.LocksList(request.Owner, request.Name);
             foreach (var l in locks) {

@@ -27,7 +27,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Protobuf Include="Protos\lock.proto" GrpcServices="Server,Client" />
+        <Protobuf Include="Protos\lock-provider.proto" GrpcServices="Server,Client" />
     </ItemGroup>
 
     <ItemGroup>
