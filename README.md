@@ -4,7 +4,7 @@ A gRPC server to provide FIFO named locks
 Proto file: [here](https://github.com/sakya/LockProvider/blob/main/LockProviderApi/Protos/lock-provider.proto)
 
 ## Run docker image
-Pul the image
+Pull the image
 ```shell
 docker pull paoloiommarini/lock-provider:latest
 ```
@@ -213,8 +213,8 @@ Response:
     "dev": "nodemon --watch src --exec ts-node src/index.ts"
   },
   ```
-- Copy the  [proto file](https://github.com/sakya/LockProvider/blob/main/LockProviderApi/Protos/lock-provider.proto) in the `lock-provider-quickstart` directory.\
-- Create the client
+- Copy the [proto file](https://github.com/sakya/LockProvider/blob/main/LockProviderApi/Protos/lock-provider.proto) in the `lock-provider-quickstart` directory.
+- Create the typed client
   ```shell
   npx protoc --plugin=protoc-gen-ts_proto=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=./src --ts_proto_opt=outputServices=grpc-js -I ./ ./lock-provider.proto
   ```
@@ -304,7 +304,7 @@ Response:
         timeout: 5
       });
 
-      // Try to acquire lock_1. This will fail after 5 seconds
+      // Try to acquire lock_2. This will fail after 5 seconds
       await acquireLock({
         owner,
         name: 'lock_2',
