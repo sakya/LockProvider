@@ -16,18 +16,20 @@ jobs:
       - name: Log in to Docker Hub
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-      - name: Set image tag
-        id: vars
-        run: echo "TAG=$(date +%s)" >> $GITHUB_ENV
+      - name: Read version from .csproj
+        id: version
+        run: |
+          VERSION=$(grep '<AssemblyVersion>' LockProviderApi/LockProviderApi.csproj | sed -E 's/.*<AssemblyVersion>(.*)<\/AssemblyVersion>.*/\1/')
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
 
       - name: Build the Docker image
-        run: docker build . -f LockProviderApi/Dockerfile -t paoloiommarini/lock-provider:${{ env.TAG }}
+        run: docker build . -f LockProviderApi/Dockerfile -t paoloiommarini/lock-provider:${{ env.VERSION }}
 
       - name: Push image to Docker Hub
-        run: docker push paoloiommarini/lock-provider:${{ env.TAG }}
-        
+        run: docker push paoloiommarini/lock-provider:${{ env.VERSION }}
+
       - name: Tag as latest
-        run: docker tag paoloiommarini/lock-provider:${{ env.TAG }} paoloiommarini/lock-provider:latest
+        run: docker tag paoloiommarini/lock-provider:${{ env.VERSION }} paoloiommarini/lock-provider:latest
 
       - name: Push latest
         run: docker push paoloiommarini/lock-provider:latest
