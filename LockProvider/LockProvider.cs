@@ -162,7 +162,7 @@ public class LockProvider : IAsyncDisposable
     /// </summary>
     /// <param name="owner">The lock owner</param>
     /// <param name="name">The lock name</param>
-    /// <returns></returns>
+    /// <returns>True on success, false if the lock was not found</returns>
     /// <exception cref="ArgumentException"></exception>
     public async Task<bool> ReleaseLock(string owner, string name)
     {
