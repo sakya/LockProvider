@@ -335,10 +335,10 @@ Response:
   ```
 - Expected output
   ```shell
-  Released 0 locks
   Lock lock_1 acquired
   Lock lock_1 released
   Lock lock_2 acquired
   Lock lock_2 acquire failed: Timeout
   Exception: Timeout
+  Released 1 locks
   ```
