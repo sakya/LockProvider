@@ -219,13 +219,15 @@ public class LockProvider : IAsyncDisposable
                 nameRegex = $"^{nameRegex}";
             if (!nameRegex.EndsWith('$'))
                 nameRegex = $"{nameRegex}$";
-            regex = new Regex(nameRegex);
+
+            if (nameRegex != "^*$")
+                regex = new Regex(nameRegex);
         }
 
         foreach (var s in locks) {
             if (s.Owner != owner)
                 continue;
-            if (nameRegex != "*" && regex != null && !regex.Match(s.Name).Success)
+            if (regex != null && !regex.Match(s.Name).Success)
                 continue;
 
             res.Add(new SemaphoreInfo(s.Owner, s.Name, s.AcquiredAt));

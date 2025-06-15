@@ -84,8 +84,8 @@ public class LockProviderTests
         await lp.AcquireLock(owner1, "lockA", timeoutSeconds);
         await lp.AcquireLock(owner1, "lockB123", timeoutSeconds);
         await lp.AcquireLock(owner1, "specialLock", timeoutSeconds);
-
         await lp.AcquireLock(owner2, "lockA", timeoutSeconds);
+
         var allLocksOwner1 = await lp.LocksList(owner1);
         Assert.That(allLocksOwner1.Count, Is.EqualTo(3));
         Assert.That(allLocksOwner1.All(l => l.Owner == owner1));
@@ -102,6 +102,10 @@ public class LockProviderTests
         Assert.That(locksOwner2.Count, Is.EqualTo(1));
         Assert.That(locksOwner2[0].Owner, Is.EqualTo(owner2));
         Assert.That(locksOwner2[0].Name, Is.EqualTo("lockA"));
+
+        var allLocks = await lp.LocksList(owner1, "*");
+        Assert.That(allLocks.All(l => l.Owner == owner1));
+        Assert.That(allLocks.Count, Is.EqualTo(3));
     }
 
     [Test]
