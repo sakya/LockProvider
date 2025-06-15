@@ -1,7 +1,7 @@
 # LockProvider
 A gRPC server to provide FIFO named locks
 
-Proto file: [here](https://github.com/sakya/LockProvider/blob/main/LockProviderApi/Protos/lock.proto)
+Proto file: [here](https://github.com/sakya/LockProvider/blob/main/LockProviderApi/Protos/lock-provider.proto)
 
 ## Run docker image
 Pul the image
@@ -213,7 +213,7 @@ Response:
     "dev": "nodemon --watch src --exec ts-node src/index.ts"
   },
   ```
-- Copy the  [proto file](https://github.com/sakya/LockProvider/blob/main/LockProviderApi/Protos/lock.proto) in the `lock-provider-quickstart` directory.\
+- Copy the  [proto file](https://github.com/sakya/LockProvider/blob/main/LockProviderApi/Protos/lock-provider.proto) in the `lock-provider-quickstart` directory.\
 - Create the client
   ```shell
   npx protoc --plugin=protoc-gen-ts_proto=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=./src --ts_proto_opt=outputServices=grpc-js -I ./ ./lock-provider.proto
@@ -222,9 +222,9 @@ Response:
   ```typescript
   import { ChannelCredentials } from "@grpc/grpc-js";
   import { LockAcquireRequest, LockProviderClient, LockRequest, LockResponse, LocksListResponse } from "./lock-provider";
-  
+
   const client = new LockProviderClient('localhost:5200', ChannelCredentials.createInsecure());
-  
+
   function releaseMany(request: LockRequest): Promise<LocksListResponse> {
     return new Promise((resolve, reject) => {
       client.releaseMany(request, (err, response) => {
@@ -240,7 +240,7 @@ Response:
       });
     });
   }
-  
+
   function acquireLock(request: LockAcquireRequest): Promise<LockResponse> {
     return new Promise((resolve, reject) => {
       client.acquire(request, (err, response) => {
@@ -253,14 +253,14 @@ Response:
             reject(response.error);
             return;
           }
-  
+
           console.error(`Lock ${request.name} acquired`);
           resolve(response);
         }
       });
     });
   }
-  
+
   function releaseLock(request: LockRequest): Promise<LockResponse> {
     return new Promise((resolve, reject) => {
       client.release(request, (err, response) => {
@@ -273,49 +273,54 @@ Response:
             reject(response.error);
             return;
           }
-  
+
           console.error(`Lock ${request.name} released`);
           resolve(response);
         }
       });
     });
   }
-  
+
   (async () => {
+    const owner: string = 'lock_owner';
     try {
-      const rsm = await releaseMany({
-        owner: 'lock_owner',
-        name: '*',
-      });
-      console.log(`Released ${rsm.count} locks`);
-  
+      // Acquire lock_1
       await acquireLock({
-        owner: 'lock_owner',
+        owner,
         name: 'lock_1',
         timeout: 5
       });
-  
+
+      // Release lock_1
       await releaseLock({
-        owner: 'lock_owner',
+        owner,
         name: 'lock_1'
       })
-  
+
+      // Acquire lock_2
       await acquireLock({
-        owner: 'lock_owner',
+        owner,
         name: 'lock_2',
         timeout: 5
       });
-  
-      // This will fail after 5 seconds
+
+      // Try to acquire lock_1. This will fail after 5 seconds
       await acquireLock({
-        owner: 'lock_owner',
+        owner,
         name: 'lock_2',
         timeout: 5
       });
     } catch (err) {
       console.error('Exception:', err);
+    } finally {
+      // Release all lock for this owner
+      const rsm = await releaseMany({
+        owner,
+        name: '*',
+      });
+      console.log(`Released ${rsm.count} locks`);
     }
-  
+
     client.close();
     process.exit(0);
   })();
