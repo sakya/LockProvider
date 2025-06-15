@@ -1,6 +1,6 @@
 ﻿namespace Tests;
 
-public class Tests
+public class LockProviderTests
 {
     [SetUp]
     public void Setup()
