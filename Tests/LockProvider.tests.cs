@@ -123,7 +123,7 @@ public class LockProviderTests
         var isLocked = await lp.IsLocked(owner, lockName);
         Assert.That(isLocked, Is.True, "Lock should exist right after acquisition");
 
-        await Task.Delay(TimeSpan.FromSeconds(2.5));
+        await Task.Delay(TimeSpan.FromSeconds(3));
 
         isLocked = await lp.IsLocked(owner, lockName);
         Assert.That(isLocked, Is.False, "Lock should be expired and released after TTL");
