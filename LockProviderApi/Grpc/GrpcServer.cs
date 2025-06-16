@@ -15,6 +15,18 @@ public class GrpcServer : LockProviderGrpc.LockProvider.LockProviderBase
     public GrpcServer(ILogger<GrpcServer> logger)
     {
         _logger = logger;
+        if (LockProvider.Log == null) {
+            LockProvider.Log = (level, message) =>
+            {
+                switch (level) {
+                    case global::LockProvider.LockProvider.LockLogLevel.Debug: _logger.LogDebug(message); break;
+                    case global::LockProvider.LockProvider.LockLogLevel.Info: _logger.LogInformation(message); break;
+                    case global::LockProvider.LockProvider.LockLogLevel.Warning: _logger.LogWarning(message); break;
+                    case global::LockProvider.LockProvider.LockLogLevel.Error: _logger.LogError(message); break;
+                    default: _logger.LogInformation(message); break;
+                }
+            };
+        }
     }
 
     public override async Task<LockResponse> Acquire(LockAcquireRequest request, ServerCallContext context)

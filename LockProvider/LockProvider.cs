@@ -4,8 +4,15 @@ namespace LockProvider;
 
 public class LockProvider : IAsyncDisposable
 {
-    #region classes
+    public enum LockLogLevel
+    {
+        Debug,
+        Info,
+        Warning,
+        Error
+    }
 
+    #region classes
     public class SemaphoreInfo
     {
         public SemaphoreInfo(string owner, string name, DateTime acquiredAt)
@@ -48,6 +55,11 @@ public class LockProvider : IAsyncDisposable
         }
     }
 
+    #endregion
+
+    #region delegates
+    public delegate void LogDelegate(LockLogLevel level, string message);
+    public LogDelegate? Log { get; set; }
     #endregion
 
     private readonly FifoSemaphore _mainLock = new(1, 1);
@@ -296,8 +308,9 @@ public class LockProvider : IAsyncDisposable
 
                 try {
                     await ReleaseLock(l.Owner, l.Name);
-                } catch {
+                } catch (Exception ex) {
                     // Ignored because the lock could have been released in the meantime
+                    Log?.Invoke(LockLogLevel.Warning, $"Failed to release expired lock {l.Owner}:{l.Name}: {ex.Message}");
                 }
             }
         }
