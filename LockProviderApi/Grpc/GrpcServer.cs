@@ -22,7 +22,7 @@ public class GrpcServer : LockProviderGrpc.LockProvider.LockProviderBase
         try {
             var sw = new Stopwatch();
             sw.Start();
-            await LockProvider.AcquireLock(request.Owner, request.Name, request.Timeout);
+            await LockProvider.AcquireLock(request.Owner, request.Name, request.Timeout, request.TimeToLive);
             sw.Stop();
             _logger.LogInformation($"Acquired lock '{request.Name}', elapsed: {sw.Elapsed}");
         } catch (TimeoutException) {

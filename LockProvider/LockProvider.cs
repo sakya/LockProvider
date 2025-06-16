@@ -4,6 +4,8 @@ namespace LockProvider;
 
 public class LockProvider : IAsyncDisposable
 {
+    #region classes
+
     public class SemaphoreInfo
     {
         public SemaphoreInfo(string owner, string name, DateTime acquiredAt)
@@ -20,12 +22,14 @@ public class LockProvider : IAsyncDisposable
 
     private class SemaphoreInfoExtended : SemaphoreInfo
     {
-        public SemaphoreInfoExtended(string owner, string name, FifoSemaphore semaphore) :
+        public SemaphoreInfoExtended(string owner, string name, FifoSemaphore semaphore, DateTime? expireAt = null) :
             base(owner, name, DateTime.UtcNow)
         {
             Semaphore = semaphore;
+            ExpireAt = expireAt;
         }
 
+        public DateTime? ExpireAt { get; set; }
         public FifoSemaphore Semaphore { get; set; }
 
         public async Task<bool> WaitAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
@@ -44,11 +48,21 @@ public class LockProvider : IAsyncDisposable
         }
     }
 
+    #endregion
+
     private readonly FifoSemaphore _mainLock = new(1, 1);
     private readonly Dictionary<string, SemaphoreInfoExtended> _locks = new();
 
     private readonly FifoSemaphore _waitingLocksLock = new(1, 1);
     private readonly List<string> _waitingLocks = [];
+
+    private readonly CancellationTokenSource _expirationTaskCts = new();
+    private readonly Task _expirationTask;
+
+    public LockProvider()
+    {
+        _expirationTask = Task.Run(ExpireLocksLoop);
+    }
 
     /// <summary>
     /// Get the count of the current locks
@@ -91,6 +105,7 @@ public class LockProvider : IAsyncDisposable
         if (string.IsNullOrEmpty(owner)) {
             throw new ArgumentException("Owner cannot be empty");
         }
+
         name = name.Trim();
         if (string.IsNullOrEmpty(name)) {
             throw new ArgumentException("Name cannot be empty");
@@ -110,21 +125,28 @@ public class LockProvider : IAsyncDisposable
     /// <param name="owner">The lock owner</param>
     /// <param name="name">The lock name</param>
     /// <param name="timeout">The timeout in seconds</param>
+    /// <param name="timeToLive">The lock time to live in seconds. If set to 0 the lock will never expire</param>
     /// <returns></returns>
     /// <exception cref="ArgumentException"></exception>
     /// <exception cref="TimeoutException"></exception>
-    public async Task<bool> AcquireLock(string owner, string name, int timeout)
+    public async Task<bool> AcquireLock(string owner, string name, int timeout, int timeToLive = 0)
     {
         owner = owner.Trim();
         if (string.IsNullOrEmpty(owner)) {
             throw new ArgumentException("Owner cannot be empty");
         }
+
         name = name.Trim();
         if (string.IsNullOrEmpty(name)) {
             throw new ArgumentException("Name cannot be empty");
         }
+
         if (timeout <= 0) {
             throw new ArgumentException("Timeout must be greater than zero");
+        }
+
+        if (timeToLive < 0) {
+            throw new ArgumentException("TimeToLive must be equal or greater than zero");
         }
 
         var key = SemaphoreInfoExtended.GetKey(owner, name);
@@ -139,7 +161,12 @@ public class LockProvider : IAsyncDisposable
         try {
             if (!_locks.TryGetValue(key, out semaphore)) {
                 // The initial count is zero, the lock is acquired
-                semaphore = new SemaphoreInfoExtended(owner, name, new FifoSemaphore(0, 1));
+                DateTime? expireAt = null;
+                if (timeToLive > 0) {
+                    expireAt = DateTime.UtcNow.AddSeconds(timeToLive);
+                }
+
+                semaphore = new SemaphoreInfoExtended(owner, name, new FifoSemaphore(0, 1), expireAt);
                 _locks[key] = semaphore;
                 createdNew = true;
             }
@@ -170,6 +197,7 @@ public class LockProvider : IAsyncDisposable
         if (string.IsNullOrEmpty(owner)) {
             throw new ArgumentException("Owner cannot be empty");
         }
+
         name = name.Trim();
         if (string.IsNullOrEmpty(name)) {
             throw new ArgumentException("Name cannot be empty");
@@ -245,6 +273,36 @@ public class LockProvider : IAsyncDisposable
         _waitingLocksLock.Release();
     }
 
+    private async Task ExpireLocksLoop()
+    {
+        while (!_expirationTaskCts.IsCancellationRequested) {
+            await Task.Delay(TimeSpan.FromSeconds(1));
+
+            await _mainLock.WaitAsync();
+            var now = DateTime.UtcNow;
+            List<SemaphoreInfo> expiredLocks;
+            try {
+                expiredLocks = _locks
+                    .Where(kvp => kvp.Value.ExpireAt.HasValue && kvp.Value.ExpireAt <= now)
+                    .Select(kvp => new SemaphoreInfo(kvp.Value.Owner, kvp.Value.Name, kvp.Value.AcquiredAt))
+                    .ToList();
+            } finally {
+                _mainLock.Release();
+            }
+
+            foreach (var l in expiredLocks) {
+                if (_expirationTaskCts.IsCancellationRequested)
+                    break;
+
+                try {
+                    await ReleaseLock(l.Owner, l.Name);
+                } catch {
+                    // Ignored because the lock could have been released in the meantime
+                }
+            }
+        }
+    }
+
     public async ValueTask DisposeAsync()
     {
         await DisposeAsync(true);
@@ -254,6 +312,10 @@ public class LockProvider : IAsyncDisposable
     private async ValueTask DisposeAsync(bool disposing)
     {
         if (disposing) {
+            await _expirationTaskCts.CancelAsync();
+            await _expirationTask;
+            _expirationTaskCts.Dispose();
+
             await _mainLock.WaitAsync();
             try {
                 foreach (var kvp in _locks) {

@@ -108,6 +108,30 @@ public class LockProviderTests
         Assert.That(allLocks.Count, Is.EqualTo(3));
     }
 
+
+    [Test]
+    public async Task TimeToLive()
+    {
+        await using var lp = new LockProvider.LockProvider();
+
+        const string owner = "test-owner";
+        const string lockName = "expirable-lock";
+
+        var acquired = await lp.AcquireLock(owner, lockName, timeout: 1, timeToLive: 2);
+        Assert.That(acquired, Is.True, "Failed to acquire lock");
+
+        var isLocked = await lp.IsLocked(owner, lockName);
+        Assert.That(isLocked, Is.True, "Lock should exist right after acquisition");
+
+        await Task.Delay(TimeSpan.FromSeconds(2.5));
+
+        isLocked = await lp.IsLocked(owner, lockName);
+        Assert.That(isLocked, Is.False, "Lock should be expired and released after TTL");
+
+        acquired = await lp.AcquireLock(owner, lockName, timeout: 1);
+        Assert.That(acquired, Is.True, "Failed to re-acquire lock after expiration");
+    }
+
     [Test]
     public async Task ConcurrentAcquireAndRelease()
     {

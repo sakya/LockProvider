@@ -30,6 +30,7 @@ message LockAcquireRequest {
   string owner = 1;
   string name = 2;
   int32 timeout = 3;
+  int32 timeToLive = 4;
 }
 
 message LockRequest {

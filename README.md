@@ -66,12 +66,15 @@ Response:
 Try to acquire a lock.\
 Locks must be unique by owner and name, this means that different owners can acquire a lock with the same name
 
+If `timeToLive` is greater than zero the lock will be automatically released after timeToLive seconds.
+
 Request:
 ```json
 {
   "owner": "test",
   "name": "test",
-  "timeout": 5
+  "timeout": 5,
+  "timeToLive": 10
 }
 ```
 
