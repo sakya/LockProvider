@@ -2,12 +2,12 @@
 
 public static class Singleton
 {
-    private static readonly Lock _lock = new();
+    private static readonly Lock Lock = new();
     private static LockProvider.LockProvider? _lockProvider;
 
     public static LockProvider.LockProvider GetLockProvider()
     {
-        lock (_lock) {
+        lock (Lock) {
             return _lockProvider ??= new LockProvider.LockProvider();
         }
     }

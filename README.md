@@ -63,7 +63,8 @@ Response:
 }
 ```
 ### Acquire
-Try to acquire a lock
+Try to acquire a lock.\
+Locks must be unique by owner and name, this means that different owners can acquire a lock with the same name
 
 Request:
 ```json
