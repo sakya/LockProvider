@@ -1,4 +1,6 @@
 # LockProvider
+[![CodeFactor](https://www.codefactor.io/repository/github/sakya/lockprovider/badge)](https://www.codefactor.io/repository/github/sakya/lockprovider)
+
 A gRPC server to provide FIFO named locks
 
 Proto file: [here](https://github.com/sakya/LockProvider/blob/main/LockProviderApi/Protos/lock-provider.proto)
