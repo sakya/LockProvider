@@ -4,10 +4,11 @@ namespace LockProviderApi;
 
 public class Program
 {
-    public static readonly DateTime StartedAt = DateTime.UtcNow;
+    public static DateTime StartedAt;
 
     public static void Main(string[] args)
     {
+        StartedAt = DateTime.UtcNow;
         ThreadPool.GetMaxThreads(out _, out var maxIo);
         ThreadPool.SetMinThreads(workerThreads: 2000, completionPortThreads: maxIo);
         var builder = WebApplication.CreateBuilder(args);
