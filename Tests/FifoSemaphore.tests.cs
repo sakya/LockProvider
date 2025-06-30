@@ -9,36 +9,40 @@ public class FifoSemaphoreTests
     {
         var semaphore = new FifoSemaphore(initialCount: 1);
         var results = new List<int>();
-        var tasks = new List<Task>();
+        var readySignals = new List<TaskCompletionSource<bool>>();
 
         await semaphore.WaitAsync();
 
+        for (var i = 0; i < 5; i++)
+            readySignals.Add(new TaskCompletionSource<bool>());
+
+        var tasks = new List<Task>();
+
         for (var i = 0; i < 5; i++) {
-            var id = i;
+            var index = i;
+            var tcs = readySignals[i];
             var task = Task.Run(async () =>
             {
+                await tcs.Task;
                 await semaphore.WaitAsync();
                 lock (results) {
-                    results.Add(id);
+                    results.Add(index);
                 }
 
                 await Task.Delay(10);
                 semaphore.Release();
             });
-
             tasks.Add(task);
         }
 
-        await Task.Delay(100);
-
         for (var i = 0; i < 5; i++) {
-            semaphore.Release();
-            await Task.Delay(20);
+            readySignals[i].SetResult(true);
+            await Task.Delay(10);
         }
 
+        semaphore.Release();
         await Task.WhenAll(tasks);
 
-        var expectedOrder = Enumerable.Range(0, 5).ToList();
-        Assert.That(results, Is.EqualTo(expectedOrder), "Tasks did not acquire the semaphore in FIFO order.");
+        Assert.That(results, Is.EqualTo(new List<int> { 0, 1, 2, 3, 4 }));
     }
 }
