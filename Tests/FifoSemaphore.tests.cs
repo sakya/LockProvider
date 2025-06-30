@@ -13,16 +13,15 @@ public class FifoSemaphoreTests
 
         await semaphore.WaitAsync();
 
-        for (var i = 0; i < 5; i++)
-        {
+        for (var i = 0; i < 5; i++) {
             var id = i;
             var task = Task.Run(async () =>
             {
                 await semaphore.WaitAsync();
-                lock (results)
-                {
+                lock (results) {
                     results.Add(id);
                 }
+
                 await Task.Delay(10);
                 semaphore.Release();
             });
