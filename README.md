@@ -21,7 +21,7 @@ docker pull paoloiommarini/lock-provider:latest
 ```
 Run the container (in this example the server is reachable at `localhost:5200`)
 ```shell
-docker run --name LockProvider -p 5200:5000 -d paoloiommarini/lock-provider
+docker run --name LockProvider -p 5200:5000 -p 5201:5001 -d --restart unless-stopped paoloiommarini/lock-provider
 ```
 
 ## Methods
