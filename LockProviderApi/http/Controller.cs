@@ -1,0 +1,252 @@
+﻿using System.Diagnostics;
+using System.Globalization;
+using System.Reflection;
+using LockProviderApi.Models.Http;
+using Microsoft.AspNetCore.Mvc;
+using LockResponse = LockProviderApi.Models.Http.LockResponse;
+using LocksListResponse = LockProviderApi.Models.Http.LocksListResponse;
+using StatusResponse = LockProviderApi.Models.Http.StatusResponse;
+
+namespace LockProviderApi.http;
+
+[ApiController]
+public class LockController : ControllerBase
+{
+    private static readonly LockProvider.LockProvider LockProvider = Utils.Singleton.GetLockProvider();
+    private readonly ILogger<LockController> _logger;
+
+    public LockController(ILogger<LockController> logger)
+    {
+        _logger = logger;
+    }
+
+    /// <summary>
+    /// Gets the current status of the server
+    /// </summary>
+    /// <returns></returns>
+    [HttpGet("status")]
+    public async Task<ActionResult<StatusResponse>> Status()
+    {
+        try {
+            var res = new StatusResponse()
+            {
+                Result = true,
+                ServerVersion = Assembly.GetExecutingAssembly().GetName().Version,
+                Uptime = DateTime.UtcNow - Program.StartedAt,
+                Locks = await LockProvider.GetLocksCount(),
+                WaitingLocks = await LockProvider.GetWaitingLocksCount(),
+            };
+
+            return res;
+        } catch (Exception ex) {
+            _logger.LogWarning($"[Status]Getting status: {ex.Message}");
+            return new StatusResponse()
+            {
+                Result = false,
+                Error = ex.Message,
+            };
+        }
+    }
+
+    /// <summary>
+    /// Check if a specific lock is acquired.
+    /// Owner and name must match exactly.
+    /// </summary>
+    /// <param name="owner">The lock owner</param>
+    /// <param name="name">The lock name</param>
+    /// <returns></returns>
+    [HttpGet("islocked")]
+    public async Task<ActionResult<LockResponse>> IsLocked([FromQuery]string owner, [FromQuery]string name)
+    {
+        try {
+            var res = new LockResponse()
+            {
+                Owner = owner,
+                Name = name,
+                Result = (await LockProvider.IsLocked(owner, name)),
+            };
+            return res;
+        } catch (Exception ex) {
+            _logger.LogWarning($"[IsLocked]Error checking lock '{name}' ({owner}): {ex.Message}");
+            return new LockResponse()
+            {
+                Owner = owner,
+                Name = name,
+                Result = false,
+                Error = ex.Message,
+            };
+        }
+    }
+
+    /// <summary>
+    /// List acquired logs.
+    /// The owner must match exactly.
+    /// The name is a regex to filter locks.
+    /// </summary>
+    /// <param name="owner">The lock owner</param>
+    /// <param name="name">The lock name regex</param>
+    /// <returns></returns>
+    [HttpGet("list")]
+    public async Task<ActionResult<LocksListResponse>> List([FromQuery] string owner, [FromQuery] string name)
+    {
+        try {
+            var res = new LocksListResponse()
+            {
+                Owner = owner,
+                Name = name,
+                Result = true,
+            };
+            var locks = await LockProvider.LocksList(owner, name);
+            foreach (var l in locks) {
+                res.Locks.Add(new LocksListResponse.LockInfo()
+                {
+                    Owner = l.Owner,
+                    Name = l.Name,
+                    AcquiredAt = l.AcquiredAt
+                });
+            }
+
+            return res;
+        } catch (Exception ex) {
+            _logger.LogWarning($"[List]Getting locks list: {ex.Message}");
+            return new LocksListResponse()
+            {
+                Owner = owner,
+                Name = name,
+                Result = false,
+                Error = ex.Message,
+            };
+        }
+    }
+
+    /// <summary>
+    /// Acquire a lock
+    /// </summary>
+    /// <param name="request"></param>
+    /// <returns></returns>
+    [HttpPost("acquire")]
+    public async Task<ActionResult<LockResponse>> Acquire([FromBody] AcquireRequest request)
+    {
+        try {
+            var sw = new Stopwatch();
+            sw.Start();
+            await LockProvider.AcquireLock(request.Owner, request.Name, request.Timeout, request.TimeToLive);
+            sw.Stop();
+            _logger.LogInformation($"Acquired lock '{request.Name}', elapsed: {sw.Elapsed}");
+        } catch (TimeoutException) {
+            _logger.LogWarning($"[Acquire]Error acquiring lock '{request.Name}' ({request.Owner}): Timeout ({request.Timeout} seconds)");
+            return new LockResponse()
+            {
+                Owner = request.Owner,
+                Name = request.Name,
+                Result = false,
+                Error = "Timeout",
+            };
+        } catch (Exception ex) {
+            _logger.LogWarning($"[Acquire]Error acquiring lock '{request.Name}' ({request.Owner}): {ex.Message}");
+            return new LockResponse()
+            {
+                Owner = request.Owner,
+                Name = request.Name,
+                Result = false,
+                Error = ex.Message,
+            };
+        }
+
+        return new LockResponse()
+        {
+            Owner = request.Owner,
+            Name = request.Name,
+            Result = true
+        };
+    }
+
+    /// <summary>
+    /// Release a lock.
+    /// Owner and name must match exactly.
+    /// </summary>
+    /// <param name="request"></param>
+    /// <returns></returns>
+    [HttpDelete("release")]
+    public async Task<ActionResult<LockResponse>> Release([FromBody] ReleaseRequest request)
+    {
+        try {
+            var sw = new Stopwatch();
+            sw.Start();
+            var res = await LockProvider.ReleaseLock(request.Owner, request.Name);
+            sw.Stop();
+            if (res) {
+                _logger.LogInformation($"Released lock '{request.Name}', elapsed: {sw.Elapsed}");
+                return new LockResponse()
+                {
+                    Owner = request.Owner,
+                    Name = request.Name,
+                    Result = true
+                };
+            }
+
+            _logger.LogWarning($"[Release]Error releasing lock '{request.Name}' ({request.Owner}): not found");
+            return new LockResponse()
+            {
+                Owner = request.Owner,
+                Name = request.Name,
+                Result = false,
+                Error = "NotFound"
+            };
+        } catch (Exception ex) {
+            _logger.LogWarning($"[Release]Error releasing lock '{request.Name}' ({request.Owner}): {ex.Message}");
+            return new LockResponse()
+            {
+                Owner = request.Owner,
+                Name = request.Name,
+                Result = false,
+                Error = ex.Message,
+            };
+        }
+    }
+
+    /// <summary>
+    /// Release multiple locks.
+    /// The owner must match exactly.
+    /// The name is a regex to filter locks.
+    /// </summary>
+    /// <param name="request"></param>
+    /// <returns></returns>
+    [HttpDelete("releasemany")]
+    public async Task<ActionResult<LocksListResponse>> ReleaseMany([FromBody] ReleaseRequest request)
+    {
+        try {
+            var res = new LocksListResponse()
+            {
+                Owner = request.Owner,
+                Name = request.Name,
+                Result = true
+            };
+            var locks = await LockProvider.LocksList(request.Owner, request.Name);
+            foreach (var l in locks) {
+                try {
+                    if (await LockProvider.ReleaseLock(l.Owner, l.Name)) {
+                        res.Locks.Add(new LocksListResponse.LockInfo()
+                        {
+                            Owner = l.Owner,
+                            Name = l.Name,
+                            AcquiredAt = l.AcquiredAt
+                        });
+                    }
+                } catch (Exception ex) {
+                    _logger.LogWarning($"[ReleaseMany]Error releasing lock '{request.Name}' ({request.Owner}): {ex.Message}");
+                }
+            }
+
+            return res;
+        } catch (Exception ex) {
+            return new LocksListResponse()
+            {
+                Owner = request.Owner,
+                Name = request.Name,
+                Result = false,
+                Error = ex.Message
+            };
+        }
+    }
+}

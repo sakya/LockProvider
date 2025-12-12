@@ -10,7 +10,7 @@ class Program
 
     static async Task Main(string[] args)
     {
-        const int numberOfLocks = 1;
+        const int numberOfLocks = 10;
         const int numberOfThreads = 100;
 
         for (var i = 0; i < numberOfLocks; i++) {

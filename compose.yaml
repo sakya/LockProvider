@@ -4,6 +4,7 @@
     restart: unless-stopped
     ports:
       - "5200:5000"
+      - "5201:5001"
     build:
       context: .
       dockerfile: LockProviderApi/Dockerfile

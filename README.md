@@ -1,9 +1,18 @@
 # LockProvider
 [![CodeFactor](https://www.codefactor.io/repository/github/sakya/lockprovider/badge)](https://www.codefactor.io/repository/github/sakya/lockprovider)
 
-A gRPC server to provide FIFO named locks
+A gRPC and HTTP server to provide FIFO named locks
+Default ports: 
+- gRPC: 5000
+- HTTP: 5001
 
+Default docker exposed ports:
+- gRPC: 5200
+- HTPP: 5201
+ 
 Proto file: [here](https://github.com/sakya/LockProvider/blob/main/LockProviderApi/Protos/lock-provider.proto)
+
+Swagger is available at [http://localhost:5001/swagger](http://localhost:5001/swagger)
 
 ## Run docker image
 Pull the image

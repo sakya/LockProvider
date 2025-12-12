@@ -237,6 +237,13 @@ public class LockProvider : IAsyncDisposable
         return true;
     }
 
+    /// <summary>
+    /// Get a list of locks
+    /// </summary>
+    /// <param name="owner">The owner</param>
+    /// <param name="nameRegex">The name regex</param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentException"></exception>
     public async Task<List<SemaphoreInfo>> LocksList(string owner, string? nameRegex = null)
     {
         owner = owner.Trim();

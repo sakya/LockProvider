@@ -9,18 +9,24 @@
         <PublishReadyToRun>true</PublishReadyToRun>
 
         <AssemblyTitle>LockProviderApi</AssemblyTitle>
-        <AssemblyVersion>1.1.0</AssemblyVersion>
+        <AssemblyVersion>1.2.0</AssemblyVersion>
         <Copyright>Copyright © 2025, Paolo Iommarini</Copyright>
         <Authors>Paolo Iommarini</Authors>
-        <Description>A gRPC server to provide FIFO named locks</Description>
+        <Description>A gRPC and HTTP server to provide FIFO named locks</Description>
     </PropertyGroup>
 
+    <PropertyGroup>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <NoWarn>$(NoWarn);1591</NoWarn>
+    </PropertyGroup>
+    
     <ItemGroup>
-        <PackageReference Include="Google.Protobuf" Version="3.31.1" />
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.6" />
+        <PackageReference Include="Google.Protobuf" Version="3.33.2" />
         <PackageReference Include="Grpc.AspNetCore" Version="2.71.0" />
         <PackageReference Include="Grpc.AspNetCore.Server.Reflection" Version="2.71.0" />
         <PackageReference Include="Grpc.Net.Client" Version="2.71.0" />
-        <PackageReference Include="Grpc.Tools" Version="2.72.0">
+        <PackageReference Include="Grpc.Tools" Version="2.76.0">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>

@@ -1,3 +1,4 @@
+using System.Reflection;
 using LockProviderApi.Grpc;
 
 namespace LockProviderApi;
@@ -30,10 +31,38 @@ public class Program
         });
         builder.Services.AddGrpcReflection();
 
+        builder.Services.AddControllers();
+        builder.Services.AddEndpointsApiExplorer();
+        builder.Services.AddSwaggerGen(c =>
+        {
+            var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+            var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+            c.IncludeXmlComments(xmlPath);
+        });
+
         var app = builder.Build();
+
+        var logger = app.Services.GetRequiredService<ILogger<Program>>();
+        var lockProvider = Utils.Singleton.GetLockProvider();
+        if (lockProvider.Log == null) {
+            lockProvider.Log = (level, message) =>
+            {
+                switch (level) {
+                    case LockProvider.LockProvider.LockLogLevel.Debug: logger.LogDebug(message); break;
+                    case LockProvider.LockProvider.LockLogLevel.Info: logger.LogInformation(message); break;
+                    case LockProvider.LockProvider.LockLogLevel.Warning: logger.LogWarning(message); break;
+                    case LockProvider.LockProvider.LockLogLevel.Error: logger.LogError(message); break;
+                    default: logger.LogInformation(message); break;
+                }
+            };
+        }
+
+        app.UseSwagger();
+        app.UseSwaggerUI();
 
         app.MapGrpcReflectionService();
         app.MapGrpcService<GrpcServer>();
+        app.MapControllers();
 
         app.Run();
     }
