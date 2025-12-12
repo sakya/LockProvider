@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Globalization;
 using System.Reflection;
 using LockProviderApi.Models.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -7,7 +6,7 @@ using LockResponse = LockProviderApi.Models.Http.LockResponse;
 using LocksListResponse = LockProviderApi.Models.Http.LocksListResponse;
 using StatusResponse = LockProviderApi.Models.Http.StatusResponse;
 
-namespace LockProviderApi.http;
+namespace LockProviderApi.Http;
 
 [ApiController]
 public class LockController : ControllerBase
