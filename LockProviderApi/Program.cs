@@ -1,5 +1,6 @@
 using System.Reflection;
 using LockProviderApi.Grpc;
+using LockProviderApi.Tcp;
 
 namespace LockProviderApi;
 
@@ -39,6 +40,9 @@ public class Program
             var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
             c.IncludeXmlComments(xmlPath);
         });
+
+        builder.Services.AddSingleton<TcpListener>();
+        builder.Services.AddHostedService<TcpServerHostedService>();
 
         var app = builder.Build();
 

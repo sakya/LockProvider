@@ -24,9 +24,9 @@ public class GrpcServer : LockProviderGrpc.LockProvider.LockProviderBase
             sw.Start();
             await LockProvider.AcquireLock(request.Owner, request.Name, request.Timeout, request.TimeToLive);
             sw.Stop();
-            _logger.LogInformation($"Acquired lock '{request.Name}', elapsed: {sw.Elapsed}");
+            _logger.LogInformation("Acquired lock '{RequestName}', elapsed: {SwElapsed}", request.Name, sw.Elapsed);
         } catch (TimeoutException) {
-            _logger.LogWarning($"[Acquire]Error acquiring lock '{request.Name}' ({request.Owner}): Timeout ({request.Timeout} seconds)");
+            _logger.LogWarning("[Acquire]Error acquiring lock '{RequestName}' ({RequestOwner}): Timeout ({RequestTimeout} seconds)", request.Name, request.Owner, request.Timeout);
             return new LockResponse()
             {
                 Owner = request.Owner,
@@ -36,7 +36,7 @@ public class GrpcServer : LockProviderGrpc.LockProvider.LockProviderBase
                 TimeStamp = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture)
             };
         } catch (Exception ex) {
-            _logger.LogWarning($"[Acquire]Error acquiring lock '{request.Name}' ({request.Owner}): {ex.Message}");
+            _logger.LogWarning("[Acquire]Error acquiring lock '{RequestName}' ({RequestOwner}): {ExMessage}", request.Name, request.Owner, ex.Message);
             return new LockResponse()
             {
                 Owner = request.Owner,
@@ -67,7 +67,7 @@ public class GrpcServer : LockProviderGrpc.LockProvider.LockProviderBase
                 TimeStamp = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture)
             };
         } catch (Exception ex) {
-            _logger.LogWarning($"[IsLocked]Error checking lock '{request.Name}' ({request.Owner}): {ex.Message}");
+            _logger.LogWarning("[IsLocked]Error checking lock '{RequestName}' ({RequestOwner}): {ExMessage}", request.Name, request.Owner, ex.Message);
             return new LockResponse()
             {
                 Owner = request.Owner,
@@ -87,7 +87,7 @@ public class GrpcServer : LockProviderGrpc.LockProvider.LockProviderBase
             var res = await LockProvider.ReleaseLock(request.Owner, request.Name);
             sw.Stop();
             if (res) {
-                _logger.LogInformation($"Released lock '{request.Name}', elapsed: {sw.Elapsed}");
+                _logger.LogInformation("Released lock '{RequestName}', elapsed: {SwElapsed}", request.Name, sw.Elapsed);
                 return new LockResponse()
                 {
                     Owner = request.Owner,
@@ -97,7 +97,7 @@ public class GrpcServer : LockProviderGrpc.LockProvider.LockProviderBase
                 };
             }
 
-            _logger.LogWarning($"[Release]Error releasing lock '{request.Name}' ({request.Owner}): not found");
+            _logger.LogWarning("[Release]Error releasing lock '{RequestName}' ({RequestOwner}): not found", request.Name, request.Owner);
             return new LockResponse()
             {
                 Owner = request.Owner,
@@ -107,7 +107,7 @@ public class GrpcServer : LockProviderGrpc.LockProvider.LockProviderBase
                 Error = "NotFound"
             };
         } catch (Exception ex) {
-            _logger.LogWarning($"[Release]Error releasing lock '{request.Name}' ({request.Owner}): {ex.Message}");
+            _logger.LogWarning("[Release]Error releasing lock '{RequestName}' ({RequestOwner}): {ExMessage}", request.Name, request.Owner, ex.Message);
             return new LockResponse()
             {
                 Owner = request.Owner,
@@ -141,7 +141,7 @@ public class GrpcServer : LockProviderGrpc.LockProvider.LockProviderBase
                         });
                     }
                 } catch (Exception ex) {
-                    _logger.LogWarning($"[ReleaseMany]Error releasing lock '{request.Name}' ({request.Owner}): {ex.Message}");
+                    _logger.LogWarning("[ReleaseMany]Error releasing lock '{RequestName}' ({RequestOwner}): {ExMessage}", request.Name, request.Owner, ex.Message);
                 }
             }
 
