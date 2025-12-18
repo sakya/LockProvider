@@ -9,6 +9,7 @@ public sealed class TcpConnectionHandler : IThreadPoolWorkItem, IDisposable
     private sealed class LockCommand
     {
         public required string Command { get; init; }
+        public string? Id { get; set; }
         public string Owner { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
         public int Timeout { get; set; }
@@ -119,9 +120,15 @@ public sealed class TcpConnectionHandler : IThreadPoolWorkItem, IDisposable
         LockCommand cmd;
         try {
             cmd = ParseCommand(line);
+            if (string.IsNullOrEmpty(cmd.Id))
+                throw new Exception("Missing command id");
         }
         catch (Exception ex) {
-            await SendAsync($"Result=False;Error={ex.Message};\n");
+            await SendAsync(new Dictionary<string, string>()
+            {
+                { "Result", "False" },
+                { "Error", ex.Message}
+            });
             return;
         }
 
@@ -136,7 +143,13 @@ public sealed class TcpConnectionHandler : IThreadPoolWorkItem, IDisposable
 
             default:
                 _logger.LogWarning("Unknown command '{Command}'", cmd.Command);
-                await SendAsync("Result=False;Error=InvalidCommand;\n");
+                await SendAsync(new Dictionary<string, string>()
+                {
+                    { "Result", "False" },
+                    { "Id", cmd.Id ?? string.Empty },
+                    { "TimeStamp", DateTime.UtcNow.ToString("O")},
+                    { "Error", "InvalidCommand"}
+                });
                 break;
         }
     }
@@ -149,15 +162,38 @@ public sealed class TcpConnectionHandler : IThreadPoolWorkItem, IDisposable
             sw.Stop();
 
             _logger.LogInformation("Acquired lock '{CommandName}' ({CommandOwner}), elapsed: {SwElapsed}", command.Name, command.Owner, sw.Elapsed);
-            await SendAsync($"Result=True;Owner={command.Owner};Name={command.Name};\n");
+            await SendAsync(new Dictionary<string, string>()
+            {
+                { "Result", "True" },
+                { "Id", command.Id ?? string.Empty },
+                { "Owner", command.Owner },
+                { "Name", command.Name },
+                { "TimeStamp", DateTime.UtcNow.ToString("O")}
+            });
         }
         catch (TimeoutException) {
             _logger.LogWarning("[Acquire]Error acquiring lock '{CommandName}' ({CommandOwner}): Timeout ({CommandTimeout} seconds)", command.Name, command.Owner, command.Timeout);
-            await SendAsync($"Result=False;Owner={command.Owner};Name={command.Name};Error=Timeout;\n");
+            await SendAsync(new Dictionary<string, string>()
+            {
+                { "Result", "False" },
+                { "Id", command.Id ?? string.Empty },
+                { "Owner", command.Owner },
+                { "Name", command.Name },
+                { "TimeStamp", DateTime.UtcNow.ToString("O")},
+                { "Error", "Timeout"}
+            });
         }
         catch (Exception ex) {
             _logger.LogWarning("[Acquire]Error acquiring lock '{CommandName}' ({CommandOwner}): {ExMessage}", command.Name, command.Owner, ex.Message);
-            await SendAsync($"Result=False;Owner={command.Owner};Name={command.Name};Error={ex.Message};\n");
+            await SendAsync(new Dictionary<string, string>()
+            {
+                { "Result", "False" },
+                { "Id", command.Id ?? string.Empty },
+                { "Owner", command.Owner },
+                { "Name", command.Name },
+                { "TimeStamp", DateTime.UtcNow.ToString("O")},
+                { "Error", ex.Message}
+            });
         }
     }
 
@@ -170,15 +206,49 @@ public sealed class TcpConnectionHandler : IThreadPoolWorkItem, IDisposable
 
             if (released) {
                 _logger.LogInformation("Released lock '{CommandName}' ({CommandOwner}), elapsed: {SwElapsed}", command.Name, command.Owner, sw.Elapsed);
-                await SendAsync($"Result=True;Owner={command.Owner};Name={command.Name};\n");
+                await SendAsync(new Dictionary<string, string>()
+                {
+                    { "Result", "True" },
+                    { "Id", command.Id ?? string.Empty },
+                    { "Owner", command.Owner },
+                    { "Name", command.Name },
+                    { "TimeStamp", DateTime.UtcNow.ToString("O")}
+                });
             } else {
                 _logger.LogWarning("[Release]Error releasing lock '{CommandName}' ({CommandOwner}): not found", command.Name, command.Owner);
-                await SendAsync($"Result=False;Owner={command.Owner};Name={command.Name};Error=NotFound;\n");
+                await SendAsync(new Dictionary<string, string>()
+                {
+                    { "Result", "False" },
+                    { "Id", command.Id ?? string.Empty },
+                    { "Owner", command.Owner },
+                    { "Name", command.Name },
+                    { "TimeStamp", DateTime.UtcNow.ToString("O")},
+                    { "Error", "NotFound"}
+                });
             }
         } catch (Exception ex) {
             _logger.LogWarning("[Release]Error releasing lock '{CommandName}' ({CommandOwner}): {ExMessage}", command.Name, command.Owner, ex.Message);
-            await SendAsync($"Result=False;Owner={command.Owner};Name={command.Name};Error={ex.Message};\n");
+            await SendAsync(new Dictionary<string, string>()
+            {
+                { "Result", "False" },
+                { "Id", command.Id ?? string.Empty },
+                { "Owner", command.Owner },
+                { "Name", command.Name },
+                { "TimeStamp", DateTime.UtcNow.ToString("O")},
+                { "Error", ex.Message}
+            });
         }
+    }
+
+    private Task SendAsync(Dictionary<string, string> values)
+    {
+        var sb = new StringBuilder();
+        foreach (var kvp in values) {
+            sb.Append($"{kvp.Key}={kvp.Value};");
+        }
+        sb.Append('\n');
+
+        return SendAsync(sb.ToString());
     }
 
     private async Task SendAsync(string text)
@@ -234,6 +304,7 @@ public sealed class TcpConnectionHandler : IThreadPoolWorkItem, IDisposable
             if (kv.Length != 2) continue;
 
             switch (kv[0]) {
+                case "Id": cmd.Id = kv[1]; break;
                 case "Owner": cmd.Owner = kv[1]; break;
                 case "Name": cmd.Name = kv[1]; break;
                 case "Timeout": cmd.Timeout = int.Parse(kv[1]); break;

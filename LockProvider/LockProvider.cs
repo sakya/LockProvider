@@ -315,9 +315,10 @@ public class LockProvider : IAsyncDisposable
 
                 try {
                     await ReleaseLock(l.Owner, l.Name);
+                    Log?.Invoke(LockLogLevel.Info, $"Lock {l.Name} ({l.Owner}) expired");
                 } catch (Exception ex) {
                     // Ignored because the lock could have been released in the meantime
-                    Log?.Invoke(LockLogLevel.Warning, $"Failed to release expired lock {l.Owner}:{l.Name}: {ex.Message}");
+                    Log?.Invoke(LockLogLevel.Warning, $"Failed to release expired lock {l.Name} ({l.Owner}): {ex.Message}");
                 }
             }
         }

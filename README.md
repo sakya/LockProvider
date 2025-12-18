@@ -1,14 +1,16 @@
 # LockProvider
 [![CodeFactor](https://www.codefactor.io/repository/github/sakya/lockprovider/badge)](https://www.codefactor.io/repository/github/sakya/lockprovider)
 
-A gRPC and REST server to provide FIFO named locks
+A gRPC, REST and TCP server to provide FIFO named locks
 Default ports: 
 - gRPC: 5000
 - REST: 5001
+- TCP: 5002
 
 Default docker exposed ports:
 - gRPC: 5200
 - REST: 5201
+- TCP: 5202 
  
 Proto file: [here](https://github.com/sakya/LockProvider/blob/main/LockProviderApi/Protos/lock-provider.proto)
 

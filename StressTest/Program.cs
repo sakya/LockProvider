@@ -178,22 +178,23 @@ class Program
         while (true) {
             if (cancellationToken.IsCancellationRequested) break;
 
+            var commandId = $"{index}-{Guid.NewGuid().ToString()}";
             var lockName = Guid.NewGuid().ToString();
-            await socket.SendAsync(Encoding.UTF8.GetBytes($"ACQUIRE;Owner=StressTest;Name={lockName};Timeout=10;TimeToLive=10;\n"));
+            await socket.SendAsync(Encoding.UTF8.GetBytes($"ACQUIRE;Id={commandId};Owner=StressTest;Name={lockName};Timeout=10;TimeToLive=10;\n"));
 
             var buffer = new byte[1024];
             var received = await socket.ReceiveAsync(buffer);
             var response = Encoding.UTF8.GetString(buffer, 0, received);
-            if (!response.StartsWith("Result=True;")) {
+            if (ParseTcpResponse(response)["Result"] != "True") {
                 Console.WriteLine($"Failed to acquire lock {lockName}");
             }
 
-            await socket.SendAsync(Encoding.UTF8.GetBytes($"RELEASE;Owner=StressTest;Name={lockName};\n"));
+            await socket.SendAsync(Encoding.UTF8.GetBytes($"RELEASE;Id={commandId};Owner=StressTest;Name={lockName};\n"));
 
             buffer = new byte[1024];
             received = await socket.ReceiveAsync(buffer);
             response = Encoding.UTF8.GetString(buffer, 0, received);
-            if (!response.StartsWith("Result=True;")) {
+            if (ParseTcpResponse(response)["Result"] != "True") {
                 Console.WriteLine($"Failed to release lock {lockName}");
             }
 
@@ -208,5 +209,20 @@ class Program
         }
 
         return true;
+    }
+
+    private static Dictionary<string, string> ParseTcpResponse(string response)
+    {
+        var res = new Dictionary<string, string>();
+
+        var parts = response.Split(';', StringSplitOptions.TrimEntries);
+        foreach (var part in parts) {
+            var kv = part.Split('=', 2, StringSplitOptions.TrimEntries);
+            if (kv.Length != 2) continue;
+
+            res[kv[0]] = kv[1];
+        }
+
+        return res;
     }
 }
