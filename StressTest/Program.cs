@@ -171,7 +171,7 @@ class Program
 
         using var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
-        await socket.ConnectAsync("127.0.0.1", 5002, cancellationToken);
+        await socket.ConnectAsync("localhost", 5002, cancellationToken);
 
         var count = 0;
         var lastLog = DateTime.UtcNow;
@@ -190,8 +190,6 @@ class Program
             }
 
             await socket.SendAsync(Encoding.UTF8.GetBytes($"RELEASE;Id={commandId};Owner=StressTest;Name={lockName};\n"));
-
-            buffer = new byte[1024];
             received = await socket.ReceiveAsync(buffer);
             response = Encoding.UTF8.GetString(buffer, 0, received);
             if (ParseTcpResponse(response)["Result"] != "True") {
