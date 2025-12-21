@@ -30,12 +30,18 @@ public class TcpListener
 
         _logger.LogInformation("Listening for TCP connection on port {TcpPort}", tcpPort);
         while (!ct.IsCancellationRequested) {
-            var acceptSocket = await _socket.AcceptAsync(ct);
-            _logger.LogInformation("Accepted connection from {AcceptSocketRemoteEndPoint}", acceptSocket.RemoteEndPoint);
+            try {
+                var acceptSocket = await _socket.AcceptAsync(ct);
+                _logger.LogInformation("Accepted connection from {AcceptSocketRemoteEndPoint}",
+                    acceptSocket.RemoteEndPoint);
 
-            acceptSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
-            var handler = new TcpConnectionHandler(_logger, acceptSocket);
-            _ = Task.Run(() => handler.Execute(), ct);
+                acceptSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
+                var handler = new TcpConnectionHandler(_logger, acceptSocket);
+                _ = Task.Run(() => handler.Execute(), ct);
+            } catch (OperationCanceledException) {
+                _logger.LogInformation("Closing");
+                break;
+            }
         }
     }
 
