@@ -30,7 +30,7 @@ public class LockProvider : IAsyncDisposable
     private class SemaphoreInfoExtended : SemaphoreInfo
     {
         private FifoSemaphore _semaphore;
-        
+
         public SemaphoreInfoExtended(string owner, string name, FifoSemaphore semaphore, DateTime? expireAt = null) :
             base(owner, name, DateTime.UtcNow)
         {
@@ -63,6 +63,7 @@ public class LockProvider : IAsyncDisposable
     public LogDelegate? Log { get; set; }
     #endregion
 
+    private bool _disposed;
     private readonly FifoSemaphore _mainLock = new(1, 1);
     private readonly Dictionary<string, SemaphoreInfoExtended> _locks = new();
 
@@ -74,7 +75,7 @@ public class LockProvider : IAsyncDisposable
 
     public LockProvider()
     {
-        _expirationTask = Task.Run(ExpireLocksLoop);
+        _expirationTask = Task.Run(() => ExpireLocksLoop(_expirationTaskCts.Token));
     }
 
     /// <summary>
@@ -293,10 +294,10 @@ public class LockProvider : IAsyncDisposable
         _waitingLocksLock.Release();
     }
 
-    private async Task ExpireLocksLoop()
+    private async Task ExpireLocksLoop(CancellationToken token)
     {
-        while (!_expirationTaskCts.IsCancellationRequested) {
-            await Task.Delay(TimeSpan.FromSeconds(1));
+        while (!token.IsCancellationRequested) {
+            await Task.Delay(TimeSpan.FromSeconds(1), token);
 
             await _mainLock.WaitAsync();
             var now = DateTime.UtcNow;
@@ -311,7 +312,7 @@ public class LockProvider : IAsyncDisposable
             }
 
             foreach (var l in expiredLocks) {
-                if (_expirationTaskCts.IsCancellationRequested)
+                if (token.IsCancellationRequested)
                     break;
 
                 try {
@@ -327,6 +328,9 @@ public class LockProvider : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        if (_disposed) return;
+        _disposed = true;
+
         await DisposeAsync(true);
         GC.SuppressFinalize(this);
     }
