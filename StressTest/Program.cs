@@ -89,7 +89,7 @@ class Program
     private static async Task<bool> StressGrpc(int index, CancellationToken cancellationToken = default)
     {
         StartLine.Wait(cancellationToken);
-        var grpcChannel = GrpcChannel.ForAddress("http://localhost:5000");
+        using var grpcChannel = GrpcChannel.ForAddress("http://localhost:5000");
         var grpcClient = new LockProvider.LockProviderClient(grpcChannel);
 
         var count = 0;

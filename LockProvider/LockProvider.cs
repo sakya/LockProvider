@@ -29,7 +29,7 @@ public class LockProvider : IAsyncDisposable
 
     private class SemaphoreInfoExtended : SemaphoreInfo
     {
-        private FifoSemaphore _semaphore;
+        private readonly FifoSemaphore _semaphore;
 
         public SemaphoreInfoExtended(string owner, string name, FifoSemaphore semaphore, DateTime? expireAt = null) :
             base(owner, name, DateTime.UtcNow)
@@ -296,33 +296,38 @@ public class LockProvider : IAsyncDisposable
 
     private async Task ExpireLocksLoop(CancellationToken token)
     {
-        while (!token.IsCancellationRequested) {
-            await Task.Delay(TimeSpan.FromSeconds(1), token);
+        try {
+            while (!token.IsCancellationRequested) {
+                await Task.Delay(TimeSpan.FromSeconds(1), token);
 
-            await _mainLock.WaitAsync();
-            var now = DateTime.UtcNow;
-            List<SemaphoreInfo> expiredLocks;
-            try {
-                expiredLocks = _locks
-                    .Where(kvp => kvp.Value.ExpireAt.HasValue && kvp.Value.ExpireAt <= now)
-                    .Select(kvp => new SemaphoreInfo(kvp.Value.Owner, kvp.Value.Name, kvp.Value.AcquiredAt))
-                    .ToList();
-            } finally {
-                _mainLock.Release();
-            }
-
-            foreach (var l in expiredLocks) {
-                if (token.IsCancellationRequested)
-                    break;
-
+                await _mainLock.WaitAsync();
+                List<SemaphoreInfo> expiredLocks;
                 try {
-                    await ReleaseLock(l.Owner, l.Name);
-                    Log?.Invoke(LockLogLevel.Info, $"Lock {l.Name} ({l.Owner}) expired");
-                } catch (Exception ex) {
-                    // Ignored because the lock could have been released in the meantime
-                    Log?.Invoke(LockLogLevel.Warning, $"Failed to release expired lock {l.Name} ({l.Owner}): {ex.Message}");
+                    var now = DateTime.UtcNow;
+                    expiredLocks = _locks
+                        .Where(kvp => kvp.Value.ExpireAt.HasValue && kvp.Value.ExpireAt <= now)
+                        .Select(kvp => new SemaphoreInfo(kvp.Value.Owner, kvp.Value.Name, kvp.Value.AcquiredAt))
+                        .ToList();
+                } finally {
+                    _mainLock.Release();
+                }
+
+                foreach (var l in expiredLocks) {
+                    if (token.IsCancellationRequested)
+                        break;
+
+                    try {
+                        await ReleaseLock(l.Owner, l.Name);
+                        Log?.Invoke(LockLogLevel.Info, $"Lock {l.Name} ({l.Owner}) expired");
+                    } catch (Exception ex) {
+                        // Ignored because the lock could have been released in the meantime
+                        Log?.Invoke(LockLogLevel.Warning,
+                            $"Failed to release expired lock {l.Name} ({l.Owner}): {ex.Message}");
+                    }
                 }
             }
+        } catch (Exception ex) {
+            Log?.Invoke(LockLogLevel.Warning, $"ExpireLocksLoop error: {ex.Message}");
         }
     }
 
