@@ -131,7 +131,7 @@ public class LockController : ControllerBase
             sw.Start();
             await LockProvider.AcquireLock(request.Owner, request.Name, request.Timeout, request.TimeToLive);
             sw.Stop();
-            _logger.LogInformation("Acquired lock '{RequestName}' ({RequestOwner}), elapsed: {SwElapsed}", request.Name, request.Owner, sw.Elapsed);
+            _logger.LogDebug("Acquired lock '{RequestName}' ({RequestOwner}), elapsed: {SwElapsed}", request.Name, request.Owner, sw.Elapsed);
         } catch (TimeoutException) {
             _logger.LogWarning("[Acquire]Error acquiring lock '{RequestName}' ({RequestOwner}): Timeout ({RequestTimeout} seconds)", request.Name, request.Owner, request.Timeout);
             return new LockResponse()
@@ -176,7 +176,7 @@ public class LockController : ControllerBase
             var res = await LockProvider.ReleaseLock(owner, name);
             sw.Stop();
             if (res) {
-                _logger.LogInformation("Released lock '{Name}' ({Owner}), elapsed: {SwElapsed}", name, owner, sw.Elapsed);
+                _logger.LogDebug("Released lock '{Name}' ({Owner}), elapsed: {SwElapsed}", name, owner, sw.Elapsed);
                 return new LockResponse()
                 {
                     Owner = owner,

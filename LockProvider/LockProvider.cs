@@ -29,24 +29,25 @@ public class LockProvider : IAsyncDisposable
 
     private class SemaphoreInfoExtended : SemaphoreInfo
     {
+        private FifoSemaphore _semaphore;
+        
         public SemaphoreInfoExtended(string owner, string name, FifoSemaphore semaphore, DateTime? expireAt = null) :
             base(owner, name, DateTime.UtcNow)
         {
-            Semaphore = semaphore;
+            _semaphore = semaphore;
             ExpireAt = expireAt;
         }
 
         public DateTime? ExpireAt { get; set; }
-        public FifoSemaphore Semaphore { get; set; }
 
         public async Task<bool> WaitAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
         {
-            return await Semaphore.WaitAsync(timeout, cancellationToken);
+            return await _semaphore.WaitAsync(timeout, cancellationToken);
         }
 
         public void Release()
         {
-            Semaphore.Release();
+            _semaphore.Release();
         }
 
         public static string GetKey(string owner, string name)

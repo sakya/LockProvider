@@ -46,7 +46,7 @@ public class Program
 
         var app = builder.Build();
 
-        var logger = app.Services.GetRequiredService<ILogger<Program>>();
+        var logger = app.Services.GetRequiredService<ILogger<LockProvider.LockProvider>>();
         var lockProvider = Utils.Singleton.GetLockProvider();
         if (lockProvider.Log == null) {
             lockProvider.Log = (level, message) =>

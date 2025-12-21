@@ -24,7 +24,7 @@ public class GrpcServer : LockProviderGrpc.LockProvider.LockProviderBase
             sw.Start();
             await LockProvider.AcquireLock(request.Owner, request.Name, request.Timeout, request.TimeToLive);
             sw.Stop();
-            _logger.LogInformation("Acquired lock '{RequestName}', elapsed: {SwElapsed}", request.Name, sw.Elapsed);
+            _logger.LogDebug("Acquired lock '{RequestName}', elapsed: {SwElapsed}", request.Name, sw.Elapsed);
         } catch (TimeoutException) {
             _logger.LogWarning("[Acquire]Error acquiring lock '{RequestName}' ({RequestOwner}): Timeout ({RequestTimeout} seconds)", request.Name, request.Owner, request.Timeout);
             return new LockResponse()
@@ -87,7 +87,7 @@ public class GrpcServer : LockProviderGrpc.LockProvider.LockProviderBase
             var res = await LockProvider.ReleaseLock(request.Owner, request.Name);
             sw.Stop();
             if (res) {
-                _logger.LogInformation("Released lock '{RequestName}', elapsed: {SwElapsed}", request.Name, sw.Elapsed);
+                _logger.LogDebug("Released lock '{RequestName}', elapsed: {SwElapsed}", request.Name, sw.Elapsed);
                 return new LockResponse()
                 {
                     Owner = request.Owner,

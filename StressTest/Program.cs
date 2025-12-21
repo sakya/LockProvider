@@ -95,9 +95,7 @@ class Program
         var count = 0;
         var lastLog = DateTime.UtcNow;
 
-        while (true) {
-            if (cancellationToken.IsCancellationRequested) break;
-
+        while (!cancellationToken.IsCancellationRequested) {
             var lockName = Guid.NewGuid().ToString();
             var acquireReq = new LockAcquireRequest() { Owner = "StressTest", Name = lockName, Timeout = 10, TimeToLive = 10};
             var acquireRes = await grpcClient.AcquireAsync(acquireReq);
@@ -130,9 +128,7 @@ class Program
 
         var count = 0;
         var lastLog = DateTime.UtcNow;
-        while (true) {
-            if (cancellationToken.IsCancellationRequested) break;
-
+        while (!cancellationToken.IsCancellationRequested) {
             var lockName = Guid.NewGuid().ToString();
             var content = JsonContent.Create(new
             {
@@ -175,9 +171,7 @@ class Program
 
         var count = 0;
         var lastLog = DateTime.UtcNow;
-        while (true) {
-            if (cancellationToken.IsCancellationRequested) break;
-
+        while (!cancellationToken.IsCancellationRequested) {
             var commandId = $"{index}-{Guid.NewGuid().ToString()}";
             var lockName = Guid.NewGuid().ToString();
             await socket.SendAsync(Encoding.UTF8.GetBytes($"ACQUIRE;Id={commandId};Owner=StressTest;Name={lockName};Timeout=10;TimeToLive=10;\n"));
@@ -185,14 +179,17 @@ class Program
             var buffer = new byte[1024];
             var received = await socket.ReceiveAsync(buffer);
             var response = Encoding.UTF8.GetString(buffer, 0, received);
-            if (ParseTcpResponse(response)["Result"] != "True") {
+            var pRes = ParseTcpResponse(response);
+            if (pRes["Result"] != "True" || pRes["Id"] != commandId) {
                 Console.WriteLine($"Failed to acquire lock {lockName}");
             }
 
+            commandId = $"{index}-{Guid.NewGuid().ToString()}";
             await socket.SendAsync(Encoding.UTF8.GetBytes($"RELEASE;Id={commandId};Owner=StressTest;Name={lockName};\n"));
             received = await socket.ReceiveAsync(buffer);
             response = Encoding.UTF8.GetString(buffer, 0, received);
-            if (ParseTcpResponse(response)["Result"] != "True") {
+            pRes = ParseTcpResponse(response);
+            if (pRes["Result"] != "True" || pRes["Id"] != commandId) {
                 Console.WriteLine($"Failed to release lock {lockName}");
             }
 

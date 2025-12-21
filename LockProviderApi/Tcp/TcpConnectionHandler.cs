@@ -170,7 +170,7 @@ public sealed class TcpConnectionHandler : IThreadPoolWorkItem, IDisposable
             await LockProvider.AcquireLock(command.Owner, command.Name, command.Timeout, command.TimeToLive);
             sw.Stop();
 
-            _logger.LogInformation("Acquired lock '{CommandName}' ({CommandOwner}), elapsed: {SwElapsed}", command.Name, command.Owner, sw.Elapsed);
+            _logger.LogDebug("Acquired lock '{CommandName}' ({CommandOwner}), elapsed: {SwElapsed}", command.Name, command.Owner, sw.Elapsed);
             await SendAsync(new Dictionary<string, string?>()
             {
                 { "Result", "True" },
@@ -212,7 +212,7 @@ public sealed class TcpConnectionHandler : IThreadPoolWorkItem, IDisposable
             sw.Stop();
 
             if (released) {
-                _logger.LogInformation("Released lock '{CommandName}' ({CommandOwner}), elapsed: {SwElapsed}", command.Name, command.Owner, sw.Elapsed);
+                _logger.LogDebug("Released lock '{CommandName}' ({CommandOwner}), elapsed: {SwElapsed}", command.Name, command.Owner, sw.Elapsed);
                 await SendAsync(new Dictionary<string, string?>()
                 {
                     { "Result", "True" },
