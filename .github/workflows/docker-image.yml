@@ -40,7 +40,9 @@ jobs:
         run: docker push paoloiommarini/lock-provider:${{ env.VERSION }}
 
       - name: Tag as latest
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: docker tag paoloiommarini/lock-provider:${{ env.VERSION }} paoloiommarini/lock-provider:latest
 
       - name: Push latest
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: docker push paoloiommarini/lock-provider:latest
