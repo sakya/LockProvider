@@ -39,6 +39,7 @@ public class LockProvider : IAsyncDisposable
         }
 
         public DateTime? ExpireAt { get; set; }
+        public bool IsExpired => ExpireAt.HasValue && ExpireAt.Value <= DateTime.UtcNow;
 
         public async Task<bool> WaitAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
         {
@@ -300,7 +301,7 @@ public class LockProvider : IAsyncDisposable
             while (!token.IsCancellationRequested) {
                 await Task.Delay(TimeSpan.FromSeconds(1), token);
 
-                await _mainLock.WaitAsync();
+                await _mainLock.WaitAsync(token);
                 List<SemaphoreInfo> expiredLocks;
                 try {
                     var now = DateTime.UtcNow;
@@ -326,6 +327,8 @@ public class LockProvider : IAsyncDisposable
                     }
                 }
             }
+        } catch (OperationCanceledException) {
+            // Ignored
         } catch (Exception ex) {
             Log?.Invoke(LockLogLevel.Warning, $"ExpireLocksLoop error: {ex.Message}");
         }
