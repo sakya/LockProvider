@@ -1,5 +1,6 @@
 using System.Reflection;
 using LockProviderApi.Grpc;
+using LockProviderApi.Tcp;
 
 namespace LockProviderApi;
 
@@ -40,9 +41,12 @@ public class Program
             c.IncludeXmlComments(xmlPath);
         });
 
+        builder.Services.AddSingleton<TcpListener>();
+        builder.Services.AddHostedService<TcpServerHostedService>();
+
         var app = builder.Build();
 
-        var logger = app.Services.GetRequiredService<ILogger<Program>>();
+        var logger = app.Services.GetRequiredService<ILogger<LockProvider.LockProvider>>();
         var lockProvider = Utils.Singleton.GetLockProvider();
         if (lockProvider.Log == null) {
             lockProvider.Log = (level, message) =>

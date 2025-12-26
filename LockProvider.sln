@@ -12,9 +12,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 		publish.bat = publish.bat
 		LICENSE = LICENSE
+		.github\workflows\docker-image.yml = .github\workflows\docker-image.yml
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{7AC8B614-C31A-4B38-A39F-121194B5D2AD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StressTest", "StressTest\StressTest.csproj", "{2853EA1F-8FDC-4BDA-BC7F-37E15D42DFF1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -38,5 +41,9 @@ Global
 		{7AC8B614-C31A-4B38-A39F-121194B5D2AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7AC8B614-C31A-4B38-A39F-121194B5D2AD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7AC8B614-C31A-4B38-A39F-121194B5D2AD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2853EA1F-8FDC-4BDA-BC7F-37E15D42DFF1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2853EA1F-8FDC-4BDA-BC7F-37E15D42DFF1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2853EA1F-8FDC-4BDA-BC7F-37E15D42DFF1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2853EA1F-8FDC-4BDA-BC7F-37E15D42DFF1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

@@ -1,14 +1,16 @@
 # LockProvider
 [![CodeFactor](https://www.codefactor.io/repository/github/sakya/lockprovider/badge)](https://www.codefactor.io/repository/github/sakya/lockprovider)
 
-A gRPC and REST server to provide FIFO named locks
+A gRPC, REST and TCP server to provide FIFO named locks
 Default ports: 
 - gRPC: 5000
 - REST: 5001
+- TCP: 5002
 
 Default docker exposed ports:
 - gRPC: 5200
 - REST: 5201
+- TCP: 5202 
  
 Proto file: [here](https://github.com/sakya/LockProvider/blob/main/LockProviderApi/Protos/lock-provider.proto)
 
@@ -21,7 +23,7 @@ docker pull paoloiommarini/lock-provider:latest
 ```
 Run the container (in this example the server is reachable at `localhost:5200`)
 ```shell
-docker run --name LockProvider -p 5200:5000 -p 5201:5001 -d --restart unless-stopped paoloiommarini/lock-provider
+docker run --name LockProvider -p 5200:5000 -p 5201:5001 -p 5202:5002 -d --restart unless-stopped paoloiommarini/lock-provider
 ```
 
 ## Methods

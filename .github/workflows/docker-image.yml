@@ -16,7 +16,7 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.x' # o la versione del tuo progetto
+          dotnet-version: '10.0.x'
 
       - name: Restore dependencies
         run: dotnet restore
@@ -40,7 +40,9 @@ jobs:
         run: docker push paoloiommarini/lock-provider:${{ env.VERSION }}
 
       - name: Tag as latest
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: docker tag paoloiommarini/lock-provider:${{ env.VERSION }} paoloiommarini/lock-provider:latest
 
       - name: Push latest
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: docker push paoloiommarini/lock-provider:latest

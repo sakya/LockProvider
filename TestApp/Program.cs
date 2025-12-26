@@ -4,7 +4,7 @@ namespace TestApp;
 
 class Program
 {
-    private static readonly List<string> LockNames = new();
+    private static readonly List<string> LockNames = [];
     private static readonly LockProvider.LockProvider LockProvider = new();
     private static readonly ManualResetEventSlim StartLine = new(false);
 
