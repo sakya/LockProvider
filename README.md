@@ -16,6 +16,28 @@ Proto file: [here](https://github.com/sakya/LockProvider/blob/main/LockProviderA
 
 Swagger is available at [http://localhost:5001/swagger](http://localhost:5001/swagger)
 
+## TCP protocol
+A command is composed by the command name followed by a number of arguments in the format `name=value` separated by a semicolon `;`
+Each command must end with a newline character `\n`
+Each command must have a `Id` argument. The `Id` is returned in the server answer.
+
+### Acquire a lock
+Command:
+
+`ACQUIRE;Id=123-456;Owner=lockOwner;Name=lockName;Timeout=10;TimeToLive=10;`
+
+Response:
+
+`Id=123-456;Name=lockName;Owner=lockOwner;Result=True;TimeStamp=2025-12-26T16:30:09.1702406Z;`
+### Release a lock
+Command:
+
+`RELEASE;Id=789-012;Owner=lockOwner;Name=lockName;`
+
+Response:
+
+`Id=789-012;Name=lockName;Owner=lockOwner;Result=True;TimeStamp=2025-12-26T16:30:46.7478962Z;`
+
 ## Run docker image
 Pull the image
 ```shell

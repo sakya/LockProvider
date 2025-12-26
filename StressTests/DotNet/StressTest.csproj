@@ -14,6 +14,6 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
         </PackageReference>
-        <Protobuf Include="..\LockProviderApi\Protos\lock-provider.proto" GrpcServices="Client" Link="Protos\lock-provider.proto" />
+        <Protobuf Include="..\..\LockProviderApi\Protos\lock-provider.proto" GrpcServices="Client" Link="Protos\lock-provider.proto" />
     </ItemGroup>
 </Project>
