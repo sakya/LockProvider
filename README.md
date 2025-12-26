@@ -18,7 +18,9 @@ Swagger is available at [http://localhost:5001/swagger](http://localhost:5001/sw
 
 ## TCP protocol
 A command is composed by the command name followed by a number of arguments in the format `name=value` separated by a semicolon `;`
+
 Each command must end with a newline character `\n`
+
 Each command must have a `Id` argument. The `Id` is returned in the server answer.
 
 ### Acquire a lock
