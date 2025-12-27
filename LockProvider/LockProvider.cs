@@ -116,16 +116,7 @@ public class LockProvider : IAsyncDisposable
     /// <exception cref="ArgumentException"></exception>
     public async Task<bool> IsLocked(string owner, string name)
     {
-        owner = owner.Trim();
-        if (string.IsNullOrEmpty(owner)) {
-            throw new ArgumentException("Owner cannot be empty");
-        }
-
-        name = name.Trim();
-        if (string.IsNullOrEmpty(name)) {
-            throw new ArgumentException("Name cannot be empty");
-        }
-
+        (owner, name) = Validate(owner, name);
         await _mainLock.WaitAsync();
         try {
             return _locks.ContainsKey(SemaphoreInfoExtended.GetKey(owner, name));
@@ -146,15 +137,7 @@ public class LockProvider : IAsyncDisposable
     /// <exception cref="TimeoutException"></exception>
     public async Task<bool> AcquireLock(string owner, string name, int timeout, int timeToLive = 0)
     {
-        owner = owner.Trim();
-        if (string.IsNullOrEmpty(owner)) {
-            throw new ArgumentException("Owner cannot be empty");
-        }
-
-        name = name.Trim();
-        if (string.IsNullOrEmpty(name)) {
-            throw new ArgumentException("Name cannot be empty");
-        }
+        (owner, name) = Validate(owner, name);
 
         if (timeout <= 0) {
             throw new ArgumentException("Timeout must be greater than zero");
@@ -208,16 +191,7 @@ public class LockProvider : IAsyncDisposable
     /// <exception cref="ArgumentException"></exception>
     public async Task<bool> ReleaseLock(string owner, string name)
     {
-        owner = owner.Trim();
-        if (string.IsNullOrEmpty(owner)) {
-            throw new ArgumentException("Owner cannot be empty");
-        }
-
-        name = name.Trim();
-        if (string.IsNullOrEmpty(name)) {
-            throw new ArgumentException("Name cannot be empty");
-        }
-
+        (owner, name) = Validate(owner, name);
         var key = SemaphoreInfoExtended.GetKey(owner, name);
         await _mainLock.WaitAsync();
         await _waitingLocksLock.WaitAsync();
@@ -249,11 +223,7 @@ public class LockProvider : IAsyncDisposable
     /// <exception cref="ArgumentException"></exception>
     public async Task<List<SemaphoreInfo>> LocksList(string owner, string? nameRegex = null)
     {
-        owner = owner.Trim();
-        if (string.IsNullOrEmpty(owner)) {
-            throw new ArgumentException("Owner cannot be empty");
-        }
-
+        (owner, nameRegex) = Validate(owner, nameRegex, true);
         var res = new List<SemaphoreInfo>();
         await _mainLock.WaitAsync();
         List<SemaphoreInfoExtended> locks;
@@ -361,5 +331,30 @@ public class LockProvider : IAsyncDisposable
                 _mainLock.Release();
             }
         }
+    }
+
+    private static (string, string?) Validate(string owner, string? name, bool isNameRegex = false)
+    {
+        owner = owner.Trim();
+        if (string.IsNullOrEmpty(owner)) {
+            throw new ArgumentException("Owner cannot be empty");
+        }
+
+        if (owner.Contains(';') || owner.Contains('=')) {
+            throw new ArgumentException("Owner cannot contain ';' or '='");
+        }
+
+        if (!isNameRegex) {
+            name = name?.Trim();
+            if (string.IsNullOrEmpty(name)) {
+                throw new ArgumentException("Name cannot be empty");
+            }
+
+            if (name.Contains(';') || name.Contains('=')) {
+                throw new ArgumentException("Name cannot contain ';' or '='");
+            }
+        }
+
+        return (owner, name);
     }
 }
