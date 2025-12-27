@@ -219,6 +219,15 @@ Response:
 
 `Id=789-012;Name=lockName;Owner=lockOwner;Result=True;TimeStamp=2025-12-26T16:30:46.7478962Z;`
 
+### Release many
+Command:
+
+`RELEASEMANY;Id=543-210;Owner=lockOwner;Name=*;`
+
+Response:
+
+`Id=543-210;Name=lockName;Owner=*;Result=True;Count=4;TimeStamp=2025-12-26T16:30:46.7478962Z;`
+
 ## Node.js quick start (TypeScript)
 - Create a new Node project
   ```shell

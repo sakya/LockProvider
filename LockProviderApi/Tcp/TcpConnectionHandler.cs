@@ -147,6 +147,10 @@ public sealed class TcpConnectionHandler : IThreadPoolWorkItem, IDisposable
                 await HandleRelease(cmd);
                 break;
 
+            case "RELEASEMANY":
+                await HandleReleaseMany(cmd);
+                break;
+
             case "STATUS":
                 await HandleStatus(cmd);
                 break;
@@ -177,7 +181,6 @@ public sealed class TcpConnectionHandler : IThreadPoolWorkItem, IDisposable
                 { "Id", command.Id },
                 { "Owner", command.Owner },
                 { "Name", command.Name },
-                { "TimeStamp", DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture)}
             });
         }
         catch (TimeoutException) {
@@ -219,7 +222,6 @@ public sealed class TcpConnectionHandler : IThreadPoolWorkItem, IDisposable
                     { "Id", command.Id },
                     { "Owner", command.Owner },
                     { "Name", command.Name },
-                    { "TimeStamp", DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture)}
                 });
             } else {
                 _logger.LogWarning("[Release]Error releasing lock '{CommandName}' ({CommandOwner}): not found", command.Name, command.Owner);
@@ -234,6 +236,41 @@ public sealed class TcpConnectionHandler : IThreadPoolWorkItem, IDisposable
             }
         } catch (Exception ex) {
             _logger.LogWarning("[Release]Error releasing lock '{CommandName}' ({CommandOwner}): {ExMessage}", command.Name, command.Owner, ex.Message);
+            await SendAsync(new Dictionary<string, string?>()
+            {
+                { "Result", "False" },
+                { "Id", command.Id },
+                { "Owner", command.Owner },
+                { "Name", command.Name },
+                { "Error", ex.Message}
+            });
+        }
+    }
+
+    private async Task HandleReleaseMany(LockCommand command)
+    {
+        try {
+            var count = 0;
+            var locks = await LockProvider.LocksList(command.Owner, command.Name);
+            foreach (var l in locks) {
+                try {
+                    if (await LockProvider.ReleaseLock(l.Owner, l.Name)) {
+                        count++;
+                    }
+                } catch (Exception ex) {
+                    _logger.LogWarning("[ReleaseMany]Error releasing lock '{Name}' ({Owner}): {ExMessage}", command.Name, command.Owner, ex.Message);
+                }
+            }
+
+            await SendAsync(new Dictionary<string, string?>()
+            {
+                { "Result", "True" },
+                { "Id", command.Id },
+                { "Owner", command.Owner },
+                { "Name", command.Name },
+                { "Count", count.ToString(CultureInfo.InvariantCulture) },
+            });
+        } catch (Exception ex) {
             await SendAsync(new Dictionary<string, string?>()
             {
                 { "Result", "False" },
