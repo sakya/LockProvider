@@ -1,5 +1,6 @@
 # LockProvider
 [![CodeFactor](https://www.codefactor.io/repository/github/sakya/lockprovider/badge)](https://www.codefactor.io/repository/github/sakya/lockprovider)
+[![Docker Image Version](https://img.shields.io/docker/v/paoloiommarini/lock-provider?sort=semver)](https://hub.docker.com/r/paoloiommarini/lock-provider)
 
 A gRPC, REST and TCP server to provide FIFO named locks
 Default local ports: 
