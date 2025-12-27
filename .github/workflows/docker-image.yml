@@ -30,7 +30,7 @@ jobs:
       - name: Read version from .csproj
         id: version
         run: |
-          VERSION=$(grep '<AssemblyVersion>' LockProviderApi/LockProviderApi.csproj | sed -E 's/.*<AssemblyVersion>(.*)<\/AssemblyVersion>.*/\1/')
+          VERSION=$(grep '<Version>' SolutionInfo.proj | sed -E 's/.*<Version>(.*)<\/Version>.*/\1/')
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
       - name: Build the Docker image
