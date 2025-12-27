@@ -3,7 +3,6 @@ using System.Net.Sockets;
 
 namespace LockProviderApi.Tcp;
 
-// https://medium.com/@Alikhalili/building-a-high-performance-tcp-server-from-scratch-a8ede35c4cc2
 public class TcpListener
 {
     private readonly IConfiguration _configuration;
@@ -20,7 +19,7 @@ public class TcpListener
     {
         var tcpPort = _configuration.GetValue<int>("TcpEndpoint:port");
         if (tcpPort <= 0) {
-            _logger.LogWarning("Invalidt TCP port: {TcpPort}", tcpPort);
+            _logger.LogWarning("Invalid TCP port: {TcpPort}", tcpPort);
             return;
         }
 
