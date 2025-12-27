@@ -58,6 +58,10 @@ public class FifoSemaphoreTests
 
         Assert.That(result, Is.False);
         Assert.That(sw.ElapsedMilliseconds, Is.InRange(150, 1000));
+
+        sem.Release();
+        result = await sem.WaitAsync(TimeSpan.FromMilliseconds(200));
+        Assert.That(result, Is.True);
     }
 
     [Test]
@@ -104,5 +108,45 @@ public class FifoSemaphoreTests
         var result = await sem.WaitAsync(TimeSpan.FromSeconds(5), cts.Token);
 
         Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public async Task Release_SkipsCanceledWaiters_AndReleasesNextValidOne()
+    {
+        var sem = new FifoSemaphore(0);
+
+        var w1 = sem.WaitAsync(TimeSpan.FromMilliseconds(50));
+        var w2 = sem.WaitAsync(TimeSpan.FromMilliseconds(50));
+
+        var w3 = sem.WaitAsync();
+
+        await Task.WhenAll(w1, w2);
+
+        Assert.That(await w1, Is.False);
+        Assert.That(await w2, Is.False);
+
+        sem.Release();
+
+        var completed = await Task.WhenAny(w3, Task.Delay(500));
+
+        Assert.That(completed, Is.EqualTo(w3), "Release should unlock the first waiter.");
+    }
+
+    [Test]
+    public async Task Release_WhenAllWaitersCanceled_IncrementsCurrentCount()
+    {
+        var sem = new FifoSemaphore(0);
+
+        var w1 = sem.WaitAsync(TimeSpan.FromMilliseconds(50));
+        var w2 = sem.WaitAsync(TimeSpan.FromMilliseconds(50));
+
+        await Task.WhenAll(w1, w2);
+
+        Assert.That(await w1, Is.False);
+        Assert.That(await w2, Is.False);
+
+        sem.Release();
+
+        Assert.That(sem.CurrentCount, Is.EqualTo(1), "Release should increase the count.");
     }
 }
