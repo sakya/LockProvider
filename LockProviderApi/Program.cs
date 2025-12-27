@@ -45,6 +45,8 @@ public class Program
         builder.Services.AddHostedService<TcpServerHostedService>();
 
         var app = builder.Build();
+        var pLogger = app.Services.GetRequiredService<ILogger<Program>>();
+        pLogger.LogInformation("LockProviderApi v{version}", Assembly.GetEntryAssembly()?.GetName().Version?.ToString());
 
         var logger = app.Services.GetRequiredService<ILogger<LockProvider.LockProvider>>();
         var lockProvider = Utils.Singleton.GetLockProvider();

@@ -177,7 +177,7 @@ public sealed class TcpConnectionHandler : IThreadPoolWorkItem, IDisposable
                 { "Id", command.Id },
                 { "Owner", command.Owner },
                 { "Name", command.Name },
-                { "TimeStamp", DateTime.UtcNow.ToString("O")}
+                { "TimeStamp", DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture)}
             });
         }
         catch (TimeoutException) {
@@ -219,7 +219,7 @@ public sealed class TcpConnectionHandler : IThreadPoolWorkItem, IDisposable
                     { "Id", command.Id },
                     { "Owner", command.Owner },
                     { "Name", command.Name },
-                    { "TimeStamp", DateTime.UtcNow.ToString("O")}
+                    { "TimeStamp", DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture)}
                 });
             } else {
                 _logger.LogWarning("[Release]Error releasing lock '{CommandName}' ({CommandOwner}): not found", command.Name, command.Owner);
@@ -271,7 +271,7 @@ public sealed class TcpConnectionHandler : IThreadPoolWorkItem, IDisposable
     private Task SendAsync(Dictionary<string, string?> values)
     {
         if (!values.ContainsKey("TimeStamp")) {
-            values["TimeStamp"] = DateTime.UtcNow.ToString("O");
+            values["TimeStamp"] = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
         }
 
         var sb = new StringBuilder();
