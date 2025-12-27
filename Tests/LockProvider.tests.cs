@@ -8,6 +8,36 @@ public class LockProviderTests
     }
 
     [Test]
+    public async Task InvalidOwner()
+    {
+        await using var lp = new LockProvider.LockProvider();
+
+        var ex = Assert.ThrowsAsync<ArgumentException>(async () => await lp.AcquireLock("", "lock_1", 1));
+        Assert.That(ex, Is.Not.EqualTo(null));
+
+        ex = Assert.ThrowsAsync<ArgumentException>(async () => await lp.AcquireLock("Test;", "lock_1", 1));
+        Assert.That(ex, Is.Not.EqualTo(null));
+
+        ex = Assert.ThrowsAsync<ArgumentException>(async () => await lp.AcquireLock("Test=", "lock_1", 1));
+        Assert.That(ex, Is.Not.EqualTo(null));
+    }
+
+    [Test]
+    public async Task InvalidName()
+    {
+        await using var lp = new LockProvider.LockProvider();
+
+        var ex = Assert.ThrowsAsync<ArgumentException>(async () => await lp.AcquireLock("Test", "", 1));
+        Assert.That(ex, Is.Not.EqualTo(null));
+
+        ex = Assert.ThrowsAsync<ArgumentException>(async () => await lp.AcquireLock("Test", "lock_1;", 1));
+        Assert.That(ex, Is.Not.EqualTo(null));
+
+        ex = Assert.ThrowsAsync<ArgumentException>(async () => await lp.AcquireLock("Test", "lock_1=", 1));
+        Assert.That(ex, Is.Not.EqualTo(null));
+    }
+
+    [Test]
     public async Task Lock()
     {
         await using var lp = new LockProvider.LockProvider();
