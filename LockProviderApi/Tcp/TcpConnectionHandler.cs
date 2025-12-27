@@ -139,6 +139,10 @@ public sealed class TcpConnectionHandler : IThreadPoolWorkItem, IDisposable
         }
 
         switch (cmd.Command) {
+            case "ISLOCKED":
+                await HandleIsLocked(cmd);
+                break;
+
             case "ACQUIRE":
                 await HandleAcquire(cmd);
                 break;
@@ -296,6 +300,25 @@ public sealed class TcpConnectionHandler : IThreadPoolWorkItem, IDisposable
             });
         } catch (Exception ex) {
             _logger.LogWarning("[Status]Error getting status: {ExMessage}", ex.Message);
+            await SendAsync(new Dictionary<string, string?>()
+            {
+                { "Result", "False" },
+                { "Id", command.Id },
+                { "Error", ex.Message}
+            });
+        }
+    }
+
+    private async Task HandleIsLocked(LockCommand command)
+    {
+        try {
+            await SendAsync(new Dictionary<string, string?>()
+            {
+                { "Result", (await LockProvider.IsLocked(command.Owner, command.Name)).ToString() },
+                { "Id", command.Id },
+            });
+        } catch (Exception ex) {
+            _logger.LogWarning("[IsLocked]Error checking lock '{Name}' ({Owner}): {ExMessage}", command.Name, command.Owner, ex.Message);
             await SendAsync(new Dictionary<string, string?>()
             {
                 { "Result", "False" },

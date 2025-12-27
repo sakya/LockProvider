@@ -202,7 +202,16 @@ Each command must end with a newline character `\n`
 
 Each command must have a `Id` argument. The `Id` is returned in the server response.
 
-### Acquire a lock
+### Is locked
+Command:
+
+`ISLOCKED;Id=555-123;Owner=lockOwner;Name=lockName;`
+
+Response:
+
+`Id=555-123;Name=lockName;Owner=lockOwner;Result=True;TimeStamp=2025-12-26T16:30:09.1702406Z;`
+
+### Acquire
 Command:
 
 `ACQUIRE;Id=123-456;Owner=lockOwner;Name=lockName;Timeout=10;TimeToLive=10;`
@@ -210,7 +219,8 @@ Command:
 Response:
 
 `Id=123-456;Name=lockName;Owner=lockOwner;Result=True;TimeStamp=2025-12-26T16:30:09.1702406Z;`
-### Release a lock
+
+### Release
 Command:
 
 `RELEASE;Id=789-012;Owner=lockOwner;Name=lockName;`
