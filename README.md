@@ -10,9 +10,7 @@ Default local ports:
 Default docker exposed ports:
 - gRPC: 5200
 - REST: 5201
-- TCP: 5202 
- 
-Proto file: [here](https://github.com/sakya/LockProvider/blob/main/LockProviderApi/Protos/lock-provider.proto)
+- TCP: 5202
 
 ## Run docker image
 Pull the image
@@ -25,6 +23,8 @@ docker run --name LockProvider -p 5200:5000 -p 5201:5001 -p 5202:5002 -d --resta
 ```
 
 ## gRPC methods
+Proto file: [here](https://github.com/sakya/LockProvider/blob/main/LockProviderApi/Protos/lock-provider.proto)
+
 ### Status
 Get the status of the server.
 
