@@ -2,7 +2,7 @@ const { promisify } = require('util')
 const { credentials, loadPackageDefinition } = require('@grpc/grpc-js')
 const protoLoader = require('@grpc/proto-loader')
 
-const packageDef = protoLoader.loadSync('../../Development/LockProvider/LockProviderApi/Protos/lock-provider.proto', {})
+const packageDef = protoLoader.loadSync('../../../LockProviderApi/Protos/lock-provider.proto', {})
 const packageObj = loadPackageDefinition(packageDef)
 
 const client = new packageObj.LockProvider.LockProvider('localhost:5000', credentials.createInsecure())

@@ -1,7 +1,7 @@
 const net = require('net');
 const { promisify } = require('util');
 
-async function stressTcp(index, cancellationToken = null) {
+async function stressTcp(index) {
     let count = 0;
     let lastLog = Date.now();
 
@@ -12,7 +12,7 @@ async function stressTcp(index, cancellationToken = null) {
     try {
         await connectAsync(5002, 'localhost');
     } catch (error) {
-        console.error(`Errore di connessione: ${error.message}`);
+        console.error(`Connection error: ${error.message}`);
         return false;
     }
 
@@ -30,7 +30,7 @@ async function stressTcp(index, cancellationToken = null) {
         });
     };
 
-    while (!cancellationToken || !cancellationToken.isCancellationRequested) {
+    while (true) {
         const commandId = `${index}-${generateGuid()}`;
         const lockName = generateGuid();
 
@@ -62,12 +62,9 @@ async function stressTcp(index, cancellationToken = null) {
             }
 
         } catch (error) {
-            console.error(`Errore durante l'invio/ricezione: ${error.message}`);
+            console.error(`Error: ${error.message}`);
         }
     }
-
-    socket.end();
-    return true;
 }
 
 function generateGuid() {
@@ -91,10 +88,7 @@ function parseTcpResponse(response) {
 }
 
 (async function main() {
-    const cancellationToken = {
-        isCancellationRequested: false
-    };
-    await stressTcp(1, cancellationToken);
+    await stressTcp(1);
 })().catch(err => {
     console.error('Fatal error:', err)
     process.exit(1)

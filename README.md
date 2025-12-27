@@ -2,7 +2,7 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/sakya/lockprovider/badge)](https://www.codefactor.io/repository/github/sakya/lockprovider)
 
 A gRPC, REST and TCP server to provide FIFO named locks
-Default ports: 
+Default local ports: 
 - gRPC: 5000
 - REST: 5001
 - TCP: 5002
@@ -14,30 +14,6 @@ Default docker exposed ports:
  
 Proto file: [here](https://github.com/sakya/LockProvider/blob/main/LockProviderApi/Protos/lock-provider.proto)
 
-Swagger is available at [http://localhost:5001/swagger](http://localhost:5001/swagger)
-
-## TCP protocol
-A command is composed by the command name followed by a number of arguments in the format `name=value` separated by a semicolon `;`
-Each command must end with a newline character `\n`
-Each command must have a `Id` argument. The `Id` is returned in the server answer.
-
-### Acquire a lock
-Command:
-
-`ACQUIRE;Id=123-456;Owner=lockOwner;Name=lockName;Timeout=10;TimeToLive=10;`
-
-Response:
-
-`Id=123-456;Name=lockName;Owner=lockOwner;Result=True;TimeStamp=2025-12-26T16:30:09.1702406Z;`
-### Release a lock
-Command:
-
-`RELEASE;Id=789-012;Owner=lockOwner;Name=lockName;`
-
-Response:
-
-`Id=789-012;Name=lockName;Owner=lockOwner;Result=True;TimeStamp=2025-12-26T16:30:46.7478962Z;`
-
 ## Run docker image
 Pull the image
 ```shell
@@ -48,7 +24,7 @@ Run the container (in this example the server is reachable at `localhost:5200`)
 docker run --name LockProvider -p 5200:5000 -p 5201:5001 -p 5202:5002 -d --restart unless-stopped paoloiommarini/lock-provider
 ```
 
-## Methods
+## gRPC methods
 ### Status
 Get the status of the server.
 
@@ -215,6 +191,42 @@ Response:
   "timeStamp": "2025-06-14T07:17:59.1440345Z"  
 }
 ```
+
+## REST
+Swagger is available at [http://localhost:5001/swagger](http://localhost:5001/swagger)
+
+## TCP protocol
+A command is composed by the command name followed by a number of arguments in the format `name=value` separated by a semicolon `;`
+
+Each command must end with a newline character `\n`
+
+Each command must have a `Id` argument. The `Id` is returned in the server response.
+
+### Acquire a lock
+Command:
+
+`ACQUIRE;Id=123-456;Owner=lockOwner;Name=lockName;Timeout=10;TimeToLive=10;`
+
+Response:
+
+`Id=123-456;Name=lockName;Owner=lockOwner;Result=True;TimeStamp=2025-12-26T16:30:09.1702406Z;`
+### Release a lock
+Command:
+
+`RELEASE;Id=789-012;Owner=lockOwner;Name=lockName;`
+
+Response:
+
+`Id=789-012;Name=lockName;Owner=lockOwner;Result=True;TimeStamp=2025-12-26T16:30:46.7478962Z;`
+
+### Release many
+Command:
+
+`RELEASEMANY;Id=543-210;Owner=lockOwner;Name=*;`
+
+Response:
+
+`Id=543-210;Name=lockName;Owner=*;Result=True;Count=4;TimeStamp=2025-12-26T16:30:46.7478962Z;`
 
 ## Node.js quick start (TypeScript)
 - Create a new Node project
