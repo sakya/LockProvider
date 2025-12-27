@@ -1,10 +1,10 @@
 import fetch from 'node-fetch';
 
-async function stressRest(index, cancellationToken = null) {
+async function stressRest(index) {
     let count = 0;
     let lastLog = Date.now();
 
-    while (!cancellationToken || !cancellationToken.isCancellationRequested) {
+    while (true) {
         const lockName = generateGuid();
         const requestBody = {
             Owner: 'StressTest',
@@ -45,8 +45,6 @@ async function stressRest(index, cancellationToken = null) {
             count = 0;
         }
     }
-
-    return true;
 }
 
 function generateGuid() {
@@ -58,10 +56,7 @@ function generateGuid() {
 }
 
 (async function main() {
-    const cancellationToken = {
-        isCancellationRequested: false
-    };
-    await stressRest(1, cancellationToken);
+    await stressRest(1);
 })().catch(err => {
     console.error('Fatal error:', err)
     process.exit(1)
