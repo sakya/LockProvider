@@ -240,6 +240,32 @@ Response:
 
 `Id=543-210;Name=lockName;Owner=*;Result=True;Count=4;TimeStamp=2025-12-26T16:30:46.7478962Z;`
 
+## Benchmarks
+On my machine with these specs
+```
+System:
+  Kernel: 6.18.2-arch2-1 arch: x86_64 bits: 64 compiler: gcc v: 15.2.1
+  Desktop: GNOME v: 49.2 Distro: Arch Linux
+CPU:
+  Info: quad core model: Intel Core i7-4700HQ bits: 64 type: MT MCP
+    arch: Haswell rev: 3 cache: L1: 256 KiB L2: 1024 KiB L3: 6 MiB
+  Speed (MHz): avg: 800 min/max: 800/3400 cores: 1: 800 2: 800 3: 800 4: 800
+    5: 800 6: 800 7: 800 8: 800 bogomips: 38313
+  Flags-basic: avx avx2 ht lm nx pae sse sse2 sse3 sse4_1 sse4_2 ssse3 vmx
+Info:
+  Memory: total: 16 GiB note: est. available: 15.31 GiB used: 2.45 GiB (16.0%)
+```
+
+running LockProviderApi locally (no docker container) and using the provided [stress tests](https://github.com/sakya/LockProvider/tree/develop/StressTests), I get this results (single thread client)
+- dotnet
+  - gRPC: 3400 locks per seconds
+  - REST: 3700 locks per seconds
+  - TCP: 17000 locks per seconds
+- Node.js
+  - gRPC: 1100 locks per seconds
+  - REST: 1000 locks per seconds
+  - TCP: 10000 locks per seconds
+
 ## Node.js quick start (TypeScript)
 - Create a new Node project
   ```shell

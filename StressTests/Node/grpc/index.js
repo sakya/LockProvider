@@ -19,6 +19,7 @@ function uuidv4() {
     let count = 0;
     let lastLog = Date.now();
 
+	console.log('Starting gRPC stress test');
     while(true) {
         const lockName = uuidv4();
         const acquireReq = {

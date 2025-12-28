@@ -4,6 +4,7 @@ async function stressRest(index) {
     let count = 0;
     let lastLog = Date.now();
 
+	console.log('Starting REST stress test');
     while (true) {
         const lockName = generateGuid();
         const requestBody = {
