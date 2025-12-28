@@ -204,7 +204,7 @@ Each command must end with a newline character `\n`
 
 Each command must have a `Id` argument. The `Id` is returned in the server response.
 
-### STATUS
+### Status
 Command:
 
 `STATUS;Id=s123;`
