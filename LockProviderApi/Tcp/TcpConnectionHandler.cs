@@ -21,7 +21,7 @@ public sealed partial class TcpConnectionHandler : IThreadPoolWorkItem, IDisposa
         public static LockCommand Parse(string command)
         {
             var idx = command.IndexOf(';');
-            if (idx == -1) {
+            if (idx <= 0) {
                 throw new Exception("EmptyCommand");
             }
 
@@ -50,6 +50,8 @@ public sealed partial class TcpConnectionHandler : IThreadPoolWorkItem, IDisposa
                     case "TimeToLive":
                         cmd.TimeToLive = int.Parse(value);
                         break;
+                    default:
+                        throw new Exception($"Invalid argument: {name}");
                 }
             }
 
