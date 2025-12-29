@@ -25,19 +25,34 @@ public class FifoSemaphore
             }
 
             var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            CancellationTokenRegistration registration = default;
 
             if (cancellationToken.CanBeCanceled) {
-                cancellationToken.Register(() =>
+                registration = cancellationToken.Register(() =>
                 {
+                    var removed = false;
                     lock (_lock) {
                         if (_asyncQueue.Contains(tcs)) {
-                            _asyncQueue.Enqueue(new TaskCompletionSource<bool>());
-                            tcs.TrySetCanceled(cancellationToken);
+                            var newQueue = new Queue<TaskCompletionSource<bool>>(_asyncQueue.Count);
+                            while (_asyncQueue.Count > 0) {
+                                var item = _asyncQueue.Dequeue();
+                                if (!ReferenceEquals(item, tcs))
+                                    newQueue.Enqueue(item);
+                            }
+                            while (newQueue.Count > 0)
+                                _asyncQueue.Enqueue(newQueue.Dequeue());
+
+                            removed = true;
                         }
+                    }
+
+                    if (removed) {
+                        tcs.TrySetCanceled(cancellationToken);
                     }
                 });
             }
 
+            tcs.Task.ContinueWith(_ => registration.Dispose(), TaskScheduler.Default);
             _asyncQueue.Enqueue(tcs);
             return tcs.Task;
         }

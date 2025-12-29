@@ -8,6 +8,24 @@ public class LockProviderTests
     }
 
     [Test]
+    public async Task InvalidOwner()
+    {
+        await using var lp = new LockProvider.LockProvider();
+
+        var ex = Assert.ThrowsAsync<ArgumentException>(async () => await lp.AcquireLock("", "lock_1", 1));
+        Assert.That(ex, Is.Not.EqualTo(null));
+    }
+
+    [Test]
+    public async Task InvalidName()
+    {
+        await using var lp = new LockProvider.LockProvider();
+
+        var ex = Assert.ThrowsAsync<ArgumentException>(async () => await lp.AcquireLock("Test", "", 1));
+        Assert.That(ex, Is.Not.EqualTo(null));
+    }
+
+    [Test]
     public async Task Lock()
     {
         await using var lp = new LockProvider.LockProvider();
@@ -107,7 +125,6 @@ public class LockProviderTests
         Assert.That(allLocks.All(l => l.Owner == owner1));
         Assert.That(allLocks.Count, Is.EqualTo(3));
     }
-
 
     [Test]
     public async Task TimeToLive()

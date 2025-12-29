@@ -1,7 +1,9 @@
 # LockProvider
 [![CodeFactor](https://www.codefactor.io/repository/github/sakya/lockprovider/badge)](https://www.codefactor.io/repository/github/sakya/lockprovider)
+[![Docker Image Version](https://img.shields.io/docker/v/paoloiommarini/lock-provider?sort=semver)](https://hub.docker.com/r/paoloiommarini/lock-provider)
 
 A gRPC, REST and TCP server to provide FIFO named locks
+
 Default local ports: 
 - gRPC: 5000
 - REST: 5001
@@ -10,9 +12,7 @@ Default local ports:
 Default docker exposed ports:
 - gRPC: 5200
 - REST: 5201
-- TCP: 5202 
- 
-Proto file: [here](https://github.com/sakya/LockProvider/blob/main/LockProviderApi/Protos/lock-provider.proto)
+- TCP: 5202
 
 ## Run docker image
 Pull the image
@@ -25,6 +25,8 @@ docker run --name LockProvider -p 5200:5000 -p 5201:5001 -p 5202:5002 -d --resta
 ```
 
 ## gRPC methods
+Proto file: [here](https://github.com/sakya/LockProvider/blob/main/LockProviderApi/Protos/lock-provider.proto)
+
 ### Status
 Get the status of the server.
 
@@ -198,11 +200,21 @@ Swagger is available at [http://localhost:5001/swagger](http://localhost:5001/sw
 ## TCP protocol
 A command is composed by the command name followed by a number of arguments in the format `name=value` separated by a semicolon `;`
 
+If an argument value contains the character `;` it must be escaped with a backslash `\;`
+
 Each command must end with a newline character `\n`
 
 Each command must have a `Id` argument. The `Id` is returned in the server response.
 
-### Acquire a lock
+### Status
+Command:
+
+`STATUS;Id=s123;`
+
+Response:
+`Id=s123;Locks=0;Result=True;ServerVersion=1.3.0.0;TimeStamp=2025-12-28T09:48:11.0767468Z;Uptime=0:25:42.8594;WaitingLocks=0;`
+
+### Acquire
 Command:
 
 `ACQUIRE;Id=123-456;Owner=lockOwner;Name=lockName;Timeout=10;TimeToLive=10;`
@@ -210,7 +222,17 @@ Command:
 Response:
 
 `Id=123-456;Name=lockName;Owner=lockOwner;Result=True;TimeStamp=2025-12-26T16:30:09.1702406Z;`
-### Release a lock
+
+### Is locked
+Command:
+
+`ISLOCKED;Id=555-123;Owner=lockOwner;Name=lockName;`
+
+Response:
+
+`Id=555-123;Name=lockName;Owner=lockOwner;Result=True;TimeStamp=2025-12-26T16:30:09.1702406Z;`
+
+### Release
 Command:
 
 `RELEASE;Id=789-012;Owner=lockOwner;Name=lockName;`
@@ -227,6 +249,29 @@ Command:
 Response:
 
 `Id=543-210;Name=lockName;Owner=*;Result=True;Count=4;TimeStamp=2025-12-26T16:30:46.7478962Z;`
+
+## Benchmarks
+On my machine with these specs
+```
+System:
+  Kernel: 6.18.2-arch2-1 arch: x86_64 bits: 64 compiler: gcc v: 15.2.1
+  Desktop: GNOME v: 49.2 Distro: Arch Linux
+CPU:
+  Info: quad core model: Intel Core i7-4700HQ bits: 64 type: MT MCP
+    arch: Haswell rev: 3 cache: L1: 256 KiB L2: 1024 KiB L3: 6 MiB
+  Speed (MHz): avg: 800 min/max: 800/3400 cores: 1: 800 2: 800 3: 800 4: 800
+    5: 800 6: 800 7: 800 8: 800 bogomips: 38313
+  Flags-basic: avx avx2 ht lm nx pae sse sse2 sse3 sse4_1 sse4_2 ssse3 vmx
+Info:
+  Memory: total: 16 GiB note: est. available: 15.31 GiB used: 2.45 GiB (16.0%)
+```
+
+running LockProviderApi locally (no docker container) and using the provided [stress tests](https://github.com/sakya/LockProvider/tree/develop/StressTests), I get this results (single thread client)
+
+| Technology |   gRPC |   REST |   TCP |
+|:-----------|-------:|-------:|------:|
+| dotnet     |   3400 |   3700 | 15000 |
+| Node.js    |   1100 |   1000 |  9000 |
 
 ## Node.js quick start (TypeScript)
 - Create a new Node project

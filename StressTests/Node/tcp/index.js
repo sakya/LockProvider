@@ -5,6 +5,7 @@ async function stressTcp(index) {
     let count = 0;
     let lastLog = Date.now();
 
+	console.log('Starting TCP stress test');
     const socket = new net.Socket();
     socket.setKeepAlive(true);
 

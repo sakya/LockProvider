@@ -3,12 +3,13 @@ using System.Globalization;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace LockProviderApi.Tcp;
 
-public sealed class TcpConnectionHandler : IThreadPoolWorkItem, IDisposable
+public sealed partial class TcpConnectionHandler : IThreadPoolWorkItem, IDisposable
 {
-    private sealed class LockCommand
+    public class TcpCommand
     {
         public required string Command { get; init; }
         public string? Id { get; set; }
@@ -16,7 +17,50 @@ public sealed class TcpConnectionHandler : IThreadPoolWorkItem, IDisposable
         public string Name { get; set; } = string.Empty;
         public int Timeout { get; set; }
         public int TimeToLive { get; set; }
+
+        public static TcpCommand Parse(string command)
+        {
+            var idx = command.IndexOf(';');
+            if (idx <= 0) {
+                throw new Exception("EmptyCommand");
+            }
+
+            var commandString = command[..idx].Trim().ToUpperInvariant();
+            var valueString = command[(idx + 1)..].Trim();
+
+            var cmd = new TcpCommand { Command = commandString };
+            var regex = NameValueRegex();
+            var matches = regex.Matches(valueString);
+            foreach (Match match in matches) {
+                var name = match.Groups["name"].Value.Trim();
+                var value = match.Groups["value"].Value.Trim();
+                switch (name) {
+                    case "Id":
+                        cmd.Id = value.Replace("\\;", ";");
+                        break;
+                    case "Owner":
+                        cmd.Owner = value.Replace("\\;", ";");
+                        break;
+                    case "Name":
+                        cmd.Name = value.Replace("\\;", ";");
+                        break;
+                    case "Timeout":
+                        cmd.Timeout = int.Parse(value);
+                        break;
+                    case "TimeToLive":
+                        cmd.TimeToLive = int.Parse(value);
+                        break;
+                    default:
+                        throw new Exception($"Invalid argument: {name}");
+                }
+            }
+
+            return cmd;
+        }
     }
+
+    [GeneratedRegex(@"(?:^|;)(?<name>[^=;]+)=(?<value>(?:\\;|[^;])*)")]
+    private static partial Regex NameValueRegex();
 
     private int _disposed;
     private const int BufferSize = 4096;
@@ -124,9 +168,9 @@ public sealed class TcpConnectionHandler : IThreadPoolWorkItem, IDisposable
     /// <exception cref="Exception"></exception>
     private async Task ProcessCommandAsync(string command)
     {
-        LockCommand cmd;
+        TcpCommand cmd;
         try {
-            cmd = ParseCommand(command);
+            cmd = TcpCommand.Parse(command);
             if (string.IsNullOrEmpty(cmd.Id))
                 throw new Exception("Missing command id");
         } catch (Exception ex) {
@@ -139,6 +183,10 @@ public sealed class TcpConnectionHandler : IThreadPoolWorkItem, IDisposable
         }
 
         switch (cmd.Command) {
+            case "ISLOCKED":
+                await HandleIsLocked(cmd);
+                break;
+
             case "ACQUIRE":
                 await HandleAcquire(cmd);
                 break;
@@ -167,7 +215,7 @@ public sealed class TcpConnectionHandler : IThreadPoolWorkItem, IDisposable
         }
     }
 
-    private async Task HandleAcquire(LockCommand command)
+    private async Task HandleAcquire(TcpCommand command)
     {
         try {
             var sw = Stopwatch.StartNew();
@@ -207,7 +255,7 @@ public sealed class TcpConnectionHandler : IThreadPoolWorkItem, IDisposable
         }
     }
 
-    private async Task HandleRelease(LockCommand command)
+    private async Task HandleRelease(TcpCommand command)
     {
         try {
             var sw = Stopwatch.StartNew();
@@ -247,7 +295,7 @@ public sealed class TcpConnectionHandler : IThreadPoolWorkItem, IDisposable
         }
     }
 
-    private async Task HandleReleaseMany(LockCommand command)
+    private async Task HandleReleaseMany(TcpCommand command)
     {
         try {
             var count = 0;
@@ -282,7 +330,7 @@ public sealed class TcpConnectionHandler : IThreadPoolWorkItem, IDisposable
         }
     }
 
-    private async Task HandleStatus(LockCommand command)
+    private async Task HandleStatus(TcpCommand command)
     {
         try {
             await SendAsync(new Dictionary<string, string?>()
@@ -305,6 +353,25 @@ public sealed class TcpConnectionHandler : IThreadPoolWorkItem, IDisposable
         }
     }
 
+    private async Task HandleIsLocked(TcpCommand command)
+    {
+        try {
+            await SendAsync(new Dictionary<string, string?>()
+            {
+                { "Result", (await LockProvider.IsLocked(command.Owner, command.Name)).ToString() },
+                { "Id", command.Id },
+            });
+        } catch (Exception ex) {
+            _logger.LogWarning("[IsLocked]Error checking lock '{Name}' ({Owner}): {ExMessage}", command.Name, command.Owner, ex.Message);
+            await SendAsync(new Dictionary<string, string?>()
+            {
+                { "Result", "False" },
+                { "Id", command.Id },
+                { "Error", ex.Message}
+            });
+        }
+    }
+
     private Task SendAsync(Dictionary<string, string?> values)
     {
         if (!values.ContainsKey("TimeStamp")) {
@@ -313,7 +380,7 @@ public sealed class TcpConnectionHandler : IThreadPoolWorkItem, IDisposable
 
         var sb = new StringBuilder();
         foreach (var kvp in values.OrderBy(k => k.Key)) {
-            sb.Append($"{kvp.Key}={kvp.Value};");
+            sb.Append($"{kvp.Key}={kvp.Value?.Replace(";", "\\;")};");
         }
         sb.Append('\n');
 
@@ -356,31 +423,5 @@ public sealed class TcpConnectionHandler : IThreadPoolWorkItem, IDisposable
     public void Dispose()
     {
         Close();
-    }
-
-    private static LockCommand ParseCommand(string command)
-    {
-        var parts = command.Split(';', StringSplitOptions.TrimEntries);
-        if (parts.Length == 0)
-            throw new Exception("EmptyCommand");
-
-        var cmd = new LockCommand { Command = parts[0].ToUpperInvariant() };
-        if (string.IsNullOrEmpty(cmd.Command))
-            throw new Exception("EmptyCommand");
-
-        foreach (var part in parts.Skip(1)) {
-            var kv = part.Split('=', 2, StringSplitOptions.TrimEntries);
-            if (kv.Length != 2) continue;
-
-            switch (kv[0]) {
-                case "Id": cmd.Id = kv[1]; break;
-                case "Owner": cmd.Owner = kv[1]; break;
-                case "Name": cmd.Name = kv[1]; break;
-                case "Timeout": cmd.Timeout = int.Parse(kv[1]); break;
-                case "TimeToLive": cmd.TimeToLive = int.Parse(kv[1]); break;
-            }
-        }
-
-        return cmd;
     }
 }
