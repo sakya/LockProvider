@@ -3,12 +3,13 @@ using System.Globalization;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace LockProviderApi.Tcp;
 
-public sealed class TcpConnectionHandler : IThreadPoolWorkItem, IDisposable
+public sealed partial class TcpConnectionHandler : IThreadPoolWorkItem, IDisposable
 {
-    private sealed class LockCommand
+    public class LockCommand
     {
         public required string Command { get; init; }
         public string? Id { get; set; }
@@ -16,7 +17,49 @@ public sealed class TcpConnectionHandler : IThreadPoolWorkItem, IDisposable
         public string Name { get; set; } = string.Empty;
         public int Timeout { get; set; }
         public int TimeToLive { get; set; }
+
+        public static LockCommand Parse(string command)
+        {
+            var idx = command.IndexOf(';');
+            if (idx == -1) {
+                throw new Exception("EmptyCommand");
+            }
+
+            var commandString = command[..idx].Trim().ToUpperInvariant();
+            var valueString = command[(idx + 1)..].Trim();
+
+            var cmd = new LockCommand { Command = commandString };
+            var regex = NameValueRegex();
+            var matches = regex.Matches(valueString);
+            foreach (Match match in matches) {
+                var name = match.Groups["name"].Value.Trim();
+                var value = match.Groups["value"].Value.Trim();
+                switch (name) {
+                    case "Id":
+                        cmd.Id = value.Replace("\\;", ";");
+                        break;
+                    case "Owner":
+                        cmd.Owner = value.Replace("\\;", ";");
+                        break;
+                    case "Name":
+                        cmd.Name = value.Replace("\\;", ";");
+                        break;
+                    case "Timeout":
+                        cmd.Timeout = int.Parse(value);
+                        break;
+                    case "TimeToLive":
+                        cmd.TimeToLive = int.Parse(value);
+                        break;
+                }
+            }
+
+            return cmd;
+        }
     }
+
+
+    [GeneratedRegex(@"(?:^|;)(?<name>[^=;]+)=(?<value>(?:\\;|[^;])*)")]
+    private static partial Regex NameValueRegex();
 
     private int _disposed;
     private const int BufferSize = 4096;
@@ -126,7 +169,7 @@ public sealed class TcpConnectionHandler : IThreadPoolWorkItem, IDisposable
     {
         LockCommand cmd;
         try {
-            cmd = ParseCommand(command);
+            cmd = LockCommand.Parse(command);
             if (string.IsNullOrEmpty(cmd.Id))
                 throw new Exception("Missing command id");
         } catch (Exception ex) {
@@ -379,31 +422,5 @@ public sealed class TcpConnectionHandler : IThreadPoolWorkItem, IDisposable
     public void Dispose()
     {
         Close();
-    }
-
-    private static LockCommand ParseCommand(string command)
-    {
-        var parts = command.Split(';', StringSplitOptions.TrimEntries);
-        if (parts.Length == 0)
-            throw new Exception("EmptyCommand");
-
-        var cmd = new LockCommand { Command = parts[0].ToUpperInvariant() };
-        if (string.IsNullOrEmpty(cmd.Command))
-            throw new Exception("EmptyCommand");
-
-        foreach (var part in parts.Skip(1)) {
-            var kv = part.Split('=', 2, StringSplitOptions.TrimEntries);
-            if (kv.Length != 2) continue;
-
-            switch (kv[0]) {
-                case "Id": cmd.Id = kv[1]; break;
-                case "Owner": cmd.Owner = kv[1]; break;
-                case "Name": cmd.Name = kv[1]; break;
-                case "Timeout": cmd.Timeout = int.Parse(kv[1]); break;
-                case "TimeToLive": cmd.TimeToLive = int.Parse(kv[1]); break;
-            }
-        }
-
-        return cmd;
     }
 }

@@ -200,6 +200,8 @@ Swagger is available at [http://localhost:5001/swagger](http://localhost:5001/sw
 ## TCP protocol
 A command is composed by the command name followed by a number of arguments in the format `name=value` separated by a semicolon `;`
 
+If an argument value contains the character `;` it must be escaped with a backslash `\;`
+
 Each command must end with a newline character `\n`
 
 Each command must have a `Id` argument. The `Id` is returned in the server response.
@@ -265,14 +267,11 @@ Info:
 ```
 
 running LockProviderApi locally (no docker container) and using the provided [stress tests](https://github.com/sakya/LockProvider/tree/develop/StressTests), I get this results (single thread client)
-- dotnet
-  - gRPC: 3400 locks per seconds
-  - REST: 3700 locks per seconds
-  - TCP: 17000 locks per seconds
-- Node.js
-  - gRPC: 1100 locks per seconds
-  - REST: 1000 locks per seconds
-  - TCP: 10000 locks per seconds
+
+| Technology |   gRPC |   REST |    TCP |
+|:-----------|-------:|-------:|-------:|
+| dotnet     |   3400 |   3700 |  17000 |
+| Node.js    |   1100 |   1000 |  10000 |
 
 ## Node.js quick start (TypeScript)
 - Create a new Node project

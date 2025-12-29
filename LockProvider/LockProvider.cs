@@ -340,18 +340,10 @@ public class LockProvider : IAsyncDisposable
             throw new ArgumentException("Owner cannot be empty");
         }
 
-        if (owner.Contains(';') || owner.Contains('=')) {
-            throw new ArgumentException("Owner cannot contain ';' or '='");
-        }
-
         if (!isNameRegex) {
             name = name?.Trim();
             if (string.IsNullOrEmpty(name)) {
                 throw new ArgumentException("Name cannot be empty");
-            }
-
-            if (name.Contains(';') || name.Contains('=')) {
-                throw new ArgumentException("Name cannot contain ';' or '='");
             }
         }
 

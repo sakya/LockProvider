@@ -27,6 +27,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\LockProviderApi\LockProviderApi.csproj" />
       <ProjectReference Include="..\LockProvider\LockProvider.csproj" />
     </ItemGroup>
 
