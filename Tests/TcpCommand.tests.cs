@@ -1,6 +1,6 @@
 namespace Tests;
 
-public class TcpLockCommandTests
+public class TcpCommandTests
 {
     [SetUp]
     public void Setup()
