@@ -268,10 +268,10 @@ Info:
 
 running LockProviderApi locally (no docker container) and using the provided [stress tests](https://github.com/sakya/LockProvider/tree/develop/StressTests), I get this results (single thread client)
 
-| Technology |   gRPC |   REST |    TCP |
-|:-----------|-------:|-------:|-------:|
-| dotnet     |   3400 |   3700 |  17000 |
-| Node.js    |   1100 |   1000 |  10000 |
+| Technology |   gRPC |   REST |   TCP |
+|:-----------|-------:|-------:|------:|
+| dotnet     |   3400 |   3700 | 15000 |
+| Node.js    |   1100 |   1000 |  9000 |
 
 ## Node.js quick start (TypeScript)
 - Create a new Node project

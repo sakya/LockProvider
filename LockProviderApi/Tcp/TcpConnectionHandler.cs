@@ -381,7 +381,7 @@ public sealed partial class TcpConnectionHandler : IThreadPoolWorkItem, IDisposa
 
         var sb = new StringBuilder();
         foreach (var kvp in values.OrderBy(k => k.Key)) {
-            sb.Append($"{kvp.Key}={kvp.Value};");
+            sb.Append($"{kvp.Key}={kvp.Value?.Replace(";", "\\;")};");
         }
         sb.Append('\n');
 

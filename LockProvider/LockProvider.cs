@@ -333,7 +333,7 @@ public class LockProvider : IAsyncDisposable
         }
     }
 
-    private static (string, string?) Validate(string owner, string? name, bool isNameRegex = false)
+    private static (string, string) Validate(string owner, string? name, bool isNameRegex = false)
     {
         owner = owner.Trim();
         if (string.IsNullOrEmpty(owner)) {
@@ -347,6 +347,6 @@ public class LockProvider : IAsyncDisposable
             }
         }
 
-        return (owner, name);
+        return (owner, name ?? string.Empty);
     }
 }
