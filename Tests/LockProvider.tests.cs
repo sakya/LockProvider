@@ -126,7 +126,6 @@ public class LockProviderTests
         Assert.That(allLocks.Count, Is.EqualTo(3));
     }
 
-
     [Test]
     public async Task TimeToLive()
     {

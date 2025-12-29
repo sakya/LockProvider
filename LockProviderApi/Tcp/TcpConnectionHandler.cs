@@ -59,7 +59,6 @@ public sealed partial class TcpConnectionHandler : IThreadPoolWorkItem, IDisposa
         }
     }
 
-
     [GeneratedRegex(@"(?:^|;)(?<name>[^=;]+)=(?<value>(?:\\;|[^;])*)")]
     private static partial Regex NameValueRegex();
 
