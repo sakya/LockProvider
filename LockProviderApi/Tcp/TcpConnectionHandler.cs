@@ -9,7 +9,7 @@ namespace LockProviderApi.Tcp;
 
 public sealed partial class TcpConnectionHandler : IThreadPoolWorkItem, IDisposable
 {
-    public class LockCommand
+    public class TcpCommand
     {
         public required string Command { get; init; }
         public string? Id { get; set; }
@@ -18,7 +18,7 @@ public sealed partial class TcpConnectionHandler : IThreadPoolWorkItem, IDisposa
         public int Timeout { get; set; }
         public int TimeToLive { get; set; }
 
-        public static LockCommand Parse(string command)
+        public static TcpCommand Parse(string command)
         {
             var idx = command.IndexOf(';');
             if (idx <= 0) {
@@ -28,7 +28,7 @@ public sealed partial class TcpConnectionHandler : IThreadPoolWorkItem, IDisposa
             var commandString = command[..idx].Trim().ToUpperInvariant();
             var valueString = command[(idx + 1)..].Trim();
 
-            var cmd = new LockCommand { Command = commandString };
+            var cmd = new TcpCommand { Command = commandString };
             var regex = NameValueRegex();
             var matches = regex.Matches(valueString);
             foreach (Match match in matches) {
@@ -169,9 +169,9 @@ public sealed partial class TcpConnectionHandler : IThreadPoolWorkItem, IDisposa
     /// <exception cref="Exception"></exception>
     private async Task ProcessCommandAsync(string command)
     {
-        LockCommand cmd;
+        TcpCommand cmd;
         try {
-            cmd = LockCommand.Parse(command);
+            cmd = TcpCommand.Parse(command);
             if (string.IsNullOrEmpty(cmd.Id))
                 throw new Exception("Missing command id");
         } catch (Exception ex) {
@@ -216,7 +216,7 @@ public sealed partial class TcpConnectionHandler : IThreadPoolWorkItem, IDisposa
         }
     }
 
-    private async Task HandleAcquire(LockCommand command)
+    private async Task HandleAcquire(TcpCommand command)
     {
         try {
             var sw = Stopwatch.StartNew();
@@ -256,7 +256,7 @@ public sealed partial class TcpConnectionHandler : IThreadPoolWorkItem, IDisposa
         }
     }
 
-    private async Task HandleRelease(LockCommand command)
+    private async Task HandleRelease(TcpCommand command)
     {
         try {
             var sw = Stopwatch.StartNew();
@@ -296,7 +296,7 @@ public sealed partial class TcpConnectionHandler : IThreadPoolWorkItem, IDisposa
         }
     }
 
-    private async Task HandleReleaseMany(LockCommand command)
+    private async Task HandleReleaseMany(TcpCommand command)
     {
         try {
             var count = 0;
@@ -331,7 +331,7 @@ public sealed partial class TcpConnectionHandler : IThreadPoolWorkItem, IDisposa
         }
     }
 
-    private async Task HandleStatus(LockCommand command)
+    private async Task HandleStatus(TcpCommand command)
     {
         try {
             await SendAsync(new Dictionary<string, string?>()
@@ -354,7 +354,7 @@ public sealed partial class TcpConnectionHandler : IThreadPoolWorkItem, IDisposa
         }
     }
 
-    private async Task HandleIsLocked(LockCommand command)
+    private async Task HandleIsLocked(TcpCommand command)
     {
         try {
             await SendAsync(new Dictionary<string, string?>()
