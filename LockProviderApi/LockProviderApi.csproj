@@ -44,11 +44,11 @@
         <Link>.dockerignore</Link>
       </Content>
     </ItemGroup>
-
+    
     <Target Name="PostBuild" AfterTargets="PostBuildEvent">
         <!-- dotnet tool install -global Swashbuckle.AspNetCore.Cli -->
-      <Exec Command="C:\Users\$(USERNAME)\.dotnet\tools\swagger tofile --output docs\swagger.json $(TargetDir)\LockProviderApi.dll v1" Condition="'$(OS)' == 'Windows_NT'" />
-      <Exec Command="~/.dotnet/tools/swagger tofile --output docs/swagger.json $(TargetDir)/LockProviderApi.dll v1" Condition="'$(OS)' != 'Windows_NT'" />
+      <Exec Command="C:\Users\$(USERNAME)\.dotnet\tools\swagger tofile --output ../docs\swagger.json $(TargetDir)\LockProviderApi.dll v1" Condition="'$(OS)' == 'Windows_NT'" />
+      <Exec Command="~/.dotnet/tools/swagger tofile --output ../docs/swagger.json $(TargetDir)/LockProviderApi.dll v1" Condition="'$(OS)' != 'Windows_NT'" />
     </Target>
 
 </Project>
