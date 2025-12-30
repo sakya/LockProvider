@@ -19,7 +19,7 @@ Pull the image
 ```shell
 docker pull paoloiommarini/lock-provider:latest
 ```
-Run the container (in this example the server is reachable at `localhost:5200`)
+Run the container
 ```shell
 docker run --name LockProvider -p 5200:5000 -p 5201:5001 -p 5202:5002 -d --restart unless-stopped paoloiommarini/lock-provider
 ```

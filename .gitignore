@@ -20,7 +20,6 @@ build/
 bld/
 [Bb]in/
 [Oo]bj/
-[Dd]ocs/
 .vs/
 dist/
 .flatpak-builder/

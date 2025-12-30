@@ -1,0 +1,447 @@
+{
+  "openapi": "3.0.4",
+  "info": {
+    "title": "LockProviderApi, Version=1.2.2.0, Culture=neutral, PublicKeyToken=null",
+    "version": "1.0"
+  },
+  "paths": {
+    "/status": {
+      "get": {
+        "tags": [
+          "Lock"
+        ],
+        "summary": "Gets the current status of the server",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatusResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatusResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatusResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/islocked": {
+      "get": {
+        "tags": [
+          "Lock"
+        ],
+        "summary": "Check if a specific lock is acquired.\nOwner and name must match exactly.",
+        "parameters": [
+          {
+            "name": "owner",
+            "in": "query",
+            "description": "The lock owner",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "description": "The lock name",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/LockResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LockResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LockResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/list": {
+      "get": {
+        "tags": [
+          "Lock"
+        ],
+        "summary": "List acquired locks.\nThe owner must match exactly.\nThe name is a regex to filter locks.",
+        "parameters": [
+          {
+            "name": "owner",
+            "in": "query",
+            "description": "The lock owner",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "description": "The lock name regex",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocksListResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocksListResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocksListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/acquire": {
+      "post": {
+        "tags": [
+          "Lock"
+        ],
+        "summary": "Acquire a lock",
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcquireRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcquireRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcquireRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/LockResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LockResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LockResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/release": {
+      "delete": {
+        "tags": [
+          "Lock"
+        ],
+        "summary": "Release a lock.\nOwner and name must match exactly.",
+        "parameters": [
+          {
+            "name": "owner",
+            "in": "query",
+            "description": "The lock owner",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "description": "The lock name",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/LockResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LockResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LockResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/releasemany": {
+      "delete": {
+        "tags": [
+          "Lock"
+        ],
+        "summary": "Release multiple locks.\nThe owner must match exactly.\nThe name is a regex to filter locks.",
+        "parameters": [
+          {
+            "name": "owner",
+            "in": "query",
+            "description": "The lock owner",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "description": "The lock name regex",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocksListResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocksListResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocksListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AcquireRequest": {
+        "type": "object",
+        "properties": {
+          "owner": {
+            "type": "string",
+            "description": "The lock owner",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "description": "The lock name",
+            "nullable": true
+          },
+          "timeout": {
+            "type": "integer",
+            "description": "The maximum number of seconds to wait for the lock",
+            "format": "int32"
+          },
+          "timeToLive": {
+            "type": "integer",
+            "description": "The lock time to live",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "LockInfo": {
+        "type": "object",
+        "properties": {
+          "owner": {
+            "type": "string",
+            "description": "The lock owner",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "description": "The lock name",
+            "nullable": true
+          },
+          "acquiredAt": {
+            "type": "string",
+            "description": "The UTC time the lock was acquired",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "LockResponse": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "boolean",
+            "description": "The operation result"
+          },
+          "timeStamp": {
+            "type": "string",
+            "description": "The current UTC time",
+            "format": "date-time"
+          },
+          "error": {
+            "type": "string",
+            "description": "Optional error message",
+            "nullable": true
+          },
+          "owner": {
+            "type": "string",
+            "description": "The lock owner",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "description": "The lock name",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "LocksListResponse": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "boolean",
+            "description": "The operation result"
+          },
+          "timeStamp": {
+            "type": "string",
+            "description": "The current UTC time",
+            "format": "date-time"
+          },
+          "error": {
+            "type": "string",
+            "description": "Optional error message",
+            "nullable": true
+          },
+          "owner": {
+            "type": "string",
+            "description": "The lock owner",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "description": "The lock name",
+            "nullable": true
+          },
+          "locks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LockInfo"
+            },
+            "description": "The list of locks",
+            "nullable": true
+          },
+          "count": {
+            "type": "integer",
+            "description": "The number of locks",
+            "format": "int32",
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "StatusResponse": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "boolean",
+            "description": "The operation result"
+          },
+          "timeStamp": {
+            "type": "string",
+            "description": "The current UTC time",
+            "format": "date-time"
+          },
+          "error": {
+            "type": "string",
+            "description": "Optional error message",
+            "nullable": true
+          },
+          "serverVersion": {
+            "type": "string",
+            "nullable": true
+          },
+          "uptime": {
+            "type": "string",
+            "format": "date-span"
+          },
+          "locks": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "waitingLocks": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Lock"
+    }
+  ]
+}
