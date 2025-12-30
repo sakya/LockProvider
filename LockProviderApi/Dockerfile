@@ -8,6 +8,7 @@ EXPOSE 5002
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
+RUN dotnet tool install --global Swashbuckle.AspNetCore.Cli
 COPY ["LockProviderApi/LockProviderApi.csproj", "LockProviderApi/"]
 COPY ["LockProvider/LockProvider.csproj", "LockProvider/"]
 RUN dotnet restore "LockProviderApi/LockProviderApi.csproj"
