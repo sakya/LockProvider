@@ -19,7 +19,7 @@ Pull the image
 ```shell
 docker pull paoloiommarini/lock-provider:latest
 ```
-Run the container (in this example the server is reachable at `localhost:5200`)
+Run the container
 ```shell
 docker run --name LockProvider -p 5200:5000 -p 5201:5001 -p 5202:5002 -d --restart unless-stopped paoloiommarini/lock-provider
 ```
@@ -195,7 +195,8 @@ Response:
 ```
 
 ## REST
-Swagger is available at [http://localhost:5001/swagger](http://localhost:5001/swagger)
+Swagger is available [here](https://sakya.github.io/LockProvider/)
+
 
 ## TCP protocol
 A command is composed by the command name followed by a number of arguments in the format `name=value` separated by a semicolon `;`
