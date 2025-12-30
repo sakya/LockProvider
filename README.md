@@ -195,7 +195,8 @@ Response:
 ```
 
 ## REST
-Swagger is available at [http://localhost:5001/swagger](http://localhost:5001/swagger)
+Swagger is available [here](https://sakya.github.io/LockProvider/)
+
 
 ## TCP protocol
 A command is composed by the command name followed by a number of arguments in the format `name=value` separated by a semicolon `;`
