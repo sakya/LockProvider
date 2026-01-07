@@ -40,7 +40,7 @@
         "tags": [
           "Lock"
         ],
-        "summary": "Check if a specific lock is acquired.\nOwner and name must match exactly.",
+        "summary": "Check if a specific lock is acquired.\r\nOwner and name must match exactly.",
         "parameters": [
           {
             "name": "owner",
@@ -88,7 +88,7 @@
         "tags": [
           "Lock"
         ],
-        "summary": "List acquired locks.\nThe owner must match exactly.\nThe name is a regex to filter locks.",
+        "summary": "List acquired locks.\r\nThe owner must match exactly.\r\nThe name is a regex to filter locks.",
         "parameters": [
           {
             "name": "owner",
@@ -186,7 +186,7 @@
         "tags": [
           "Lock"
         ],
-        "summary": "Release a lock.\nOwner and name must match exactly.",
+        "summary": "Release a lock.\r\nOwner and name must match exactly.",
         "parameters": [
           {
             "name": "owner",
@@ -234,7 +234,7 @@
         "tags": [
           "Lock"
         ],
-        "summary": "Release multiple locks.\nThe owner must match exactly.\nThe name is a regex to filter locks.",
+        "summary": "Release multiple locks.\r\nThe owner must match exactly.\r\nThe name is a regex to filter locks.",
         "parameters": [
           {
             "name": "owner",
