@@ -32,8 +32,9 @@ async function stressTcp(index) {
     };
 
     while (true) {
-        const commandId = `${index}-${generateGuid()}`;
-        const lockName = generateGuid();
+        const uuid = crypto.randomUUID();
+        const commandId = `${index}-${uuid}`;
+        const lockName = uuid;
 
         try {
             const acquireMessage = `ACQUIRE;Id=${commandId};Owner=StressTest;Name=${lockName};Timeout=10;TimeToLive=10;\n`;
@@ -66,14 +67,6 @@ async function stressTcp(index) {
             console.error(`Error: ${error.message}`);
         }
     }
-}
-
-function generateGuid() {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-        const r = Math.random() * 16 | 0;
-        const v = c === 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-    });
 }
 
 function parseTcpResponse(response) {

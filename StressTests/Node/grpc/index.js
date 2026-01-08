@@ -7,13 +7,7 @@ const packageObj = loadPackageDefinition(packageDef)
 
 const client = new packageObj.LockProvider.LockProvider('localhost:5000', credentials.createInsecure())
 const acquireAsync = promisify(client.Acquire.bind(client));
-const releaseAsync = promisify(client.Release.bind(client))
-
-function uuidv4() {
-    return "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c =>
-        (+c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> +c / 4).toString(16)
-    );
-}
+const releaseAsync = promisify(client.Release.bind(client));
 
 (async function main() {
     let count = 0;
@@ -21,7 +15,7 @@ function uuidv4() {
 
 	console.log('Starting gRPC stress test');
     while(true) {
-        const lockName = uuidv4();
+        const lockName = crypto.randomUUID();
         const acquireReq = {
             owner: "StressTest",
             name: lockName,
