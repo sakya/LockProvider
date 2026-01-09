@@ -24,6 +24,10 @@ Run the container
 docker run --name LockProvider -p 5200:5000 -p 5201:5001 -p 5202:5002 -d --restart unless-stopped paoloiommarini/lock-provider
 ```
 
+### Env variables
+- `MaxLockTimeToLive`: the maximum TTL for the locks (default: zero). 
+If set to zero no maximum TTL is applied.
+
 ## gRPC methods
 Proto file: [here](https://github.com/sakya/LockProvider/blob/main/LockProviderApi/Protos/lock-provider.proto)
 
@@ -69,7 +73,8 @@ Response:
     {
       "owner": "test",
       "name": "test",
-      "acquiredAt": "2025-06-13T16:41:46.0393747Z"
+      "acquiredAt": "2025-06-13T16:41:46.0393747Z",
+      "expiresAt": "2025-06-13T16:41:56.0393747Z"
     }
   ],
   "timeStamp": "2025-06-13T16:41:42.0393747Z"
@@ -97,7 +102,8 @@ Response:
   "owner": "test",
   "name": "test",
   "result": "True",
-  "timeStamp": "2025-06-13T16:47:58.6890059Z"
+  "timeStamp": "2025-06-13T16:47:58.6890059Z",
+  "expiresAt": "2025-06-13T16:48:08.6890059Z"
 }
 ```
 If the lock cannot be acquired the `error` property contains the error message
@@ -222,7 +228,7 @@ Command:
 
 Response:
 
-`Id=123-456;Name=lockName;Owner=lockOwner;Result=True;TimeStamp=2025-12-26T16:30:09.1702406Z;`
+`Id=123-456;Name=lockName;Owner=lockOwner;Result=True;TimeStamp=2025-12-26T16:30:09.1702406Z;ExpiresAt=2025-12-26T16:30:19.1702406Z`
 
 ### Is locked
 Command:
