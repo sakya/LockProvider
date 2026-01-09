@@ -15,6 +15,7 @@ public class Program
         ThreadPool.GetMaxThreads(out _, out var maxIo);
         ThreadPool.SetMinThreads(workerThreads: 2000, completionPortThreads: maxIo);
         var builder = WebApplication.CreateBuilder(args);
+        var configuration = builder.Configuration;
 
         builder.WebHost.ConfigureKestrel(options =>
         {
@@ -58,20 +59,20 @@ public class Program
             pLogger.LogInformation("{copyright}", ca.Copyright);
         }
 
+        var lockProvider = new LockProvider.LockProvider(configuration.GetValue<int>("MaxLockTimeToLive"));
+
         var logger = app.Services.GetRequiredService<ILogger<LockProvider.LockProvider>>();
-        var lockProvider = Utils.Singleton.GetLockProvider();
-        if (lockProvider.Log == null) {
-            lockProvider.Log = (level, message) =>
-            {
-                switch (level) {
-                    case LockProvider.LockProvider.LockLogLevel.Debug: logger.LogDebug("{message}", message); break;
-                    case LockProvider.LockProvider.LockLogLevel.Info: logger.LogInformation("{message}", message); break;
-                    case LockProvider.LockProvider.LockLogLevel.Warning: logger.LogWarning("{message}", message); break;
-                    case LockProvider.LockProvider.LockLogLevel.Error: logger.LogError("{message}", message); break;
-                    default: logger.LogInformation("{message}", message); break;
-                }
-            };
-        }
+        lockProvider.Log = (level, message) =>
+        {
+            switch (level) {
+                case LockProvider.LockProvider.LockLogLevel.Debug: logger.LogDebug("{message}", message); break;
+                case LockProvider.LockProvider.LockLogLevel.Info: logger.LogInformation("{message}", message); break;
+                case LockProvider.LockProvider.LockLogLevel.Warning: logger.LogWarning("{message}", message); break;
+                case LockProvider.LockProvider.LockLogLevel.Error: logger.LogError("{message}", message); break;
+                default: logger.LogInformation("{message}", message); break;
+            }
+        };
+        Utils.Singleton.InitLockProvider(lockProvider);
 
         app.UseSwagger();
         app.UseSwaggerUI();

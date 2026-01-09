@@ -72,9 +72,19 @@ public class LockProvider : IAsyncDisposable
 
     private readonly CancellationTokenSource _expirationTaskCts = new();
     private readonly Task _expirationTask;
+    private readonly int _maxLockTimeToLive;
 
-    public LockProvider()
+    /// <summary>
+    ///
+    /// </summary>
+    /// <param name="maxLockTimeToLive">The maximum time to live for the locks. If zero no maximum time to live is applied</param>
+    /// <exception cref="ArgumentException"></exception>
+    public LockProvider(int maxLockTimeToLive = 0)
     {
+        if (maxLockTimeToLive < 0) {
+            throw new ArgumentException("MaxLockTimeToLive must be equal or greater than zero");
+        }
+        _maxLockTimeToLive = maxLockTimeToLive;
         _expirationTask = Task.Run(() => ExpireLocksLoop(_expirationTaskCts.Token));
     }
 
@@ -147,6 +157,10 @@ public class LockProvider : IAsyncDisposable
 
         if (timeToLive < 0) {
             throw new ArgumentException("TimeToLive must be equal or greater than zero");
+        }
+
+        if (_maxLockTimeToLive > 0 && (timeToLive == 0 || timeToLive > _maxLockTimeToLive)) {
+            timeToLive = _maxLockTimeToLive;
         }
 
         var key = SemaphoreInfoExtended.GetKey(owner, name);
