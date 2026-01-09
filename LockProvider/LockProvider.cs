@@ -15,31 +15,30 @@ public class LockProvider : IAsyncDisposable
     #region classes
     public class SemaphoreInfo
     {
-        public SemaphoreInfo(string owner, string name, DateTime acquiredAt)
+        public SemaphoreInfo(string owner, string name, DateTime acquiredAt, DateTime? expiresAt)
         {
             Owner = owner;
             Name = name;
             AcquiredAt = acquiredAt;
+            ExpiresAt = expiresAt;
         }
 
         public string Owner { get; set; }
         public string Name { get; set; }
         public DateTime AcquiredAt { get; set; }
+        public DateTime? ExpiresAt { get; set; }
+        public bool IsExpired => ExpiresAt.HasValue && ExpiresAt.Value <= DateTime.UtcNow;
     }
 
     private class SemaphoreInfoExtended : SemaphoreInfo
     {
         private readonly FifoSemaphore _semaphore;
 
-        public SemaphoreInfoExtended(string owner, string name, FifoSemaphore semaphore, DateTime? expireAt = null) :
-            base(owner, name, DateTime.UtcNow)
+        public SemaphoreInfoExtended(string owner, string name, FifoSemaphore semaphore, DateTime? expiresAt = null) :
+            base(owner, name, DateTime.UtcNow, expiresAt)
         {
             _semaphore = semaphore;
-            ExpireAt = expireAt;
         }
-
-        public DateTime? ExpireAt { get; set; }
-        public bool IsExpired => ExpireAt.HasValue && ExpireAt.Value <= DateTime.UtcNow;
 
         public async Task<bool> WaitAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
         {
@@ -69,13 +68,23 @@ public class LockProvider : IAsyncDisposable
     private readonly Dictionary<string, SemaphoreInfoExtended> _locks = new();
 
     private readonly FifoSemaphore _waitingLocksLock = new(1, 1);
-    private readonly List<string> _waitingLocks = [];
+    private readonly Dictionary<string, int> _waitingLocks = new();
 
     private readonly CancellationTokenSource _expirationTaskCts = new();
     private readonly Task _expirationTask;
+    private readonly int _maxLockTimeToLive;
 
-    public LockProvider()
+    /// <summary>
+    ///
+    /// </summary>
+    /// <param name="maxLockTimeToLive">The maximum time to live for the locks. If zero no maximum time to live is applied</param>
+    /// <exception cref="ArgumentException"></exception>
+    public LockProvider(int maxLockTimeToLive = 0)
     {
+        if (maxLockTimeToLive < 0) {
+            throw new ArgumentException("MaxLockTimeToLive must be equal or greater than zero");
+        }
+        _maxLockTimeToLive = maxLockTimeToLive;
         _expirationTask = Task.Run(() => ExpireLocksLoop(_expirationTaskCts.Token));
     }
 
@@ -119,7 +128,10 @@ public class LockProvider : IAsyncDisposable
         (owner, name) = Validate(owner, name);
         await _mainLock.WaitAsync();
         try {
-            return _locks.ContainsKey(SemaphoreInfoExtended.GetKey(owner, name));
+            if (_locks.TryGetValue(SemaphoreInfoExtended.GetKey(owner, name), out var semaphore)) {
+                return !semaphore.IsExpired;
+            }
+            return false;
         } finally {
             _mainLock.Release();
         }
@@ -135,7 +147,7 @@ public class LockProvider : IAsyncDisposable
     /// <returns></returns>
     /// <exception cref="ArgumentException"></exception>
     /// <exception cref="TimeoutException"></exception>
-    public async Task<bool> AcquireLock(string owner, string name, int timeout, int timeToLive = 0)
+    public async Task<SemaphoreInfo> AcquireLock(string owner, string name, int timeout, int timeToLive = 0)
     {
         (owner, name) = Validate(owner, name);
 
@@ -147,9 +159,17 @@ public class LockProvider : IAsyncDisposable
             throw new ArgumentException("TimeToLive must be equal or greater than zero");
         }
 
+        if (_maxLockTimeToLive > 0 && (timeToLive == 0 || timeToLive > _maxLockTimeToLive)) {
+            timeToLive = _maxLockTimeToLive;
+        }
+
         var key = SemaphoreInfoExtended.GetKey(owner, name);
         await _waitingLocksLock.WaitAsync();
-        _waitingLocks.Add(key);
+        if (_waitingLocks.TryGetValue(key, out var count)) {
+            _waitingLocks[key] = count + 1;
+        } else {
+            _waitingLocks[key] = 1;
+        }
         _waitingLocksLock.Release();
 
         SemaphoreInfoExtended? semaphore;
@@ -159,12 +179,12 @@ public class LockProvider : IAsyncDisposable
         try {
             if (!_locks.TryGetValue(key, out semaphore)) {
                 // The initial count is zero, the lock is acquired
-                DateTime? expireAt = null;
+                DateTime? expiresAt = null;
                 if (timeToLive > 0) {
-                    expireAt = DateTime.UtcNow.AddSeconds(timeToLive);
+                    expiresAt = DateTime.UtcNow.AddSeconds(timeToLive);
                 }
 
-                semaphore = new SemaphoreInfoExtended(owner, name, new FifoSemaphore(0, 1), expireAt);
+                semaphore = new SemaphoreInfoExtended(owner, name, new FifoSemaphore(0, 1), expiresAt);
                 _locks[key] = semaphore;
                 createdNew = true;
             }
@@ -179,7 +199,7 @@ public class LockProvider : IAsyncDisposable
 
         await RemoveFromWaitingLocks(key);
 
-        return true;
+        return new SemaphoreInfo(semaphore.Owner, semaphore.Name, semaphore.AcquiredAt, semaphore.ExpiresAt);
     }
 
     /// <summary>
@@ -191,27 +211,18 @@ public class LockProvider : IAsyncDisposable
     /// <exception cref="ArgumentException"></exception>
     public async Task<bool> ReleaseLock(string owner, string name)
     {
-        (owner, name) = Validate(owner, name);
-        var key = SemaphoreInfoExtended.GetKey(owner, name);
-        await _mainLock.WaitAsync();
-        await _waitingLocksLock.WaitAsync();
-        try {
-            if (_locks.TryGetValue(key, out var semaphore)) {
-                semaphore.Release();
+        return await ReleaseLockPrimitive(owner, name, true);
+    }
 
-                var isWaiting = _waitingLocks.Contains(key);
-                if (!isWaiting) {
-                    _locks.Remove(key);
-                }
-            } else {
-                return false;
-            }
-        } finally {
-            _waitingLocksLock.Release();
-            _mainLock.Release();
-        }
-
-        return true;
+    /// <summary>
+    /// Get a list of locks
+    /// </summary>
+    /// <param name="owner">The owner</param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentException"></exception>
+    public async Task<List<SemaphoreInfo>> LocksList(string owner)
+    {
+        return await LocksList(owner, "*");
     }
 
     /// <summary>
@@ -221,7 +232,7 @@ public class LockProvider : IAsyncDisposable
     /// <param name="nameRegex">The name regex</param>
     /// <returns></returns>
     /// <exception cref="ArgumentException"></exception>
-    public async Task<List<SemaphoreInfo>> LocksList(string owner, string? nameRegex = null)
+    public async Task<List<SemaphoreInfo>> LocksList(string owner, string nameRegex)
     {
         (owner, nameRegex) = Validate(owner, nameRegex, true);
         var res = new List<SemaphoreInfo>();
@@ -245,12 +256,14 @@ public class LockProvider : IAsyncDisposable
         }
 
         foreach (var s in locks) {
+            if (s.IsExpired)
+                continue;
             if (s.Owner != owner)
                 continue;
-            if (regex != null && !regex.Match(s.Name).Success)
+            if (regex != null && !regex.IsMatch(s.Name))
                 continue;
 
-            res.Add(new SemaphoreInfo(s.Owner, s.Name, s.AcquiredAt));
+            res.Add(new SemaphoreInfo(s.Owner, s.Name, s.AcquiredAt, s.ExpiresAt));
         }
 
         return res
@@ -258,10 +271,52 @@ public class LockProvider : IAsyncDisposable
             .ToList();
     }
 
+    /// <summary>
+    /// Release a lock
+    /// </summary>
+    /// <param name="owner">The lock owner</param>
+    /// <param name="name">The lock name</param>
+    /// <param name="skipExpired">If set to true expired lock are not released</param>
+    /// <returns>True on success, false if the lock was not found</returns>
+    /// <exception cref="ArgumentException"></exception>
+    private async Task<bool> ReleaseLockPrimitive(string owner, string name, bool skipExpired)
+    {
+        (owner, name) = Validate(owner, name);
+        var key = SemaphoreInfoExtended.GetKey(owner, name);
+        await _mainLock.WaitAsync();
+        await _waitingLocksLock.WaitAsync();
+        try {
+            if (_locks.TryGetValue(key, out var semaphore)) {
+                if (skipExpired && semaphore.IsExpired)
+                    return false;
+
+                semaphore.Release();
+
+                var isWaiting = _waitingLocks.ContainsKey(key);
+                if (!isWaiting) {
+                    _locks.Remove(key);
+                }
+            } else {
+                return false;
+            }
+        } finally {
+            _waitingLocksLock.Release();
+            _mainLock.Release();
+        }
+
+        return true;
+    }
+
     private async Task RemoveFromWaitingLocks(string key)
     {
         await _waitingLocksLock.WaitAsync();
-        _waitingLocks.Remove(key);
+        if (_waitingLocks.TryGetValue(key, out var count)) {
+            if (count <= 1) {
+                _waitingLocks.Remove(key);
+            } else {
+                _waitingLocks[key] = count - 1;
+            }
+        }
         _waitingLocksLock.Release();
     }
 
@@ -276,8 +331,8 @@ public class LockProvider : IAsyncDisposable
                 try {
                     var now = DateTime.UtcNow;
                     expiredLocks = _locks
-                        .Where(kvp => kvp.Value.ExpireAt.HasValue && kvp.Value.ExpireAt <= now)
-                        .Select(kvp => new SemaphoreInfo(kvp.Value.Owner, kvp.Value.Name, kvp.Value.AcquiredAt))
+                        .Where(kvp => kvp.Value.ExpiresAt.HasValue && kvp.Value.ExpiresAt <= now)
+                        .Select(kvp => new SemaphoreInfo(kvp.Value.Owner, kvp.Value.Name, kvp.Value.AcquiredAt, kvp.Value.ExpiresAt))
                         .ToList();
                 } finally {
                     _mainLock.Release();
@@ -288,7 +343,7 @@ public class LockProvider : IAsyncDisposable
                         break;
 
                     try {
-                        await ReleaseLock(l.Owner, l.Name);
+                        await ReleaseLockPrimitive(l.Owner, l.Name, false);
                         Log?.Invoke(LockLogLevel.Info, $"Lock {l.Name} ({l.Owner}) expired");
                     } catch (Exception ex) {
                         // Ignored because the lock could have been released in the meantime
@@ -333,7 +388,7 @@ public class LockProvider : IAsyncDisposable
         }
     }
 
-    private static (string, string) Validate(string owner, string? name, bool isNameRegex = false)
+    private static (string, string) Validate(string owner, string name, bool isNameRegex = false)
     {
         owner = owner.Trim();
         if (string.IsNullOrEmpty(owner)) {
@@ -341,12 +396,12 @@ public class LockProvider : IAsyncDisposable
         }
 
         if (!isNameRegex) {
-            name = name?.Trim();
+            name = name.Trim();
             if (string.IsNullOrEmpty(name)) {
                 throw new ArgumentException("Name cannot be empty");
             }
         }
 
-        return (owner, name ?? string.Empty);
+        return (owner, name);
     }
 }

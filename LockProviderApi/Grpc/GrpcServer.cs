@@ -19,10 +19,11 @@ public class GrpcServer : LockProviderGrpc.LockProvider.LockProviderBase
 
     public override async Task<LockResponse> Acquire(LockAcquireRequest request, ServerCallContext context)
     {
+        LockProvider.LockProvider.SemaphoreInfo? lockInfo;
         try {
             var sw = new Stopwatch();
             sw.Start();
-            await LockProvider.AcquireLock(request.Owner, request.Name, request.Timeout, request.TimeToLive);
+            lockInfo = await LockProvider.AcquireLock(request.Owner, request.Name, request.Timeout, request.TimeToLive);
             sw.Stop();
             _logger.LogDebug("Acquired lock '{RequestName}', elapsed: {SwElapsed}", request.Name, sw.Elapsed);
         } catch (TimeoutException) {
@@ -52,6 +53,7 @@ public class GrpcServer : LockProviderGrpc.LockProvider.LockProviderBase
             Owner = request.Owner,
             Name = request.Name,
             Result = true.ToString(),
+            ExpiresAt = lockInfo?.ExpiresAt?.ToString("o", CultureInfo.InvariantCulture),
             TimeStamp = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture)
         };
     }
@@ -198,7 +200,8 @@ public class GrpcServer : LockProviderGrpc.LockProvider.LockProviderBase
                 {
                     Owner = l.Owner,
                     Name = l.Name,
-                    AcquiredAt = l.AcquiredAt.ToString("o", CultureInfo.InvariantCulture)
+                    AcquiredAt = l.AcquiredAt.ToString("o", CultureInfo.InvariantCulture),
+                    ExpiresAt = l.ExpiresAt?.ToString("o", CultureInfo.InvariantCulture),
                 });
             }
 

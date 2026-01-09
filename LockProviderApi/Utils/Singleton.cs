@@ -2,13 +2,15 @@
 
 public static class Singleton
 {
-    private static readonly Lock Lock = new();
     private static LockProvider.LockProvider? _lockProvider;
+
+    public static void InitLockProvider(LockProvider.LockProvider lockProvider)
+    {
+        _lockProvider = lockProvider;
+    }
 
     public static LockProvider.LockProvider GetLockProvider()
     {
-        lock (Lock) {
-            return _lockProvider ??= new LockProvider.LockProvider();
-        }
+        return _lockProvider ?? throw new Exception("LockProvider not initialized");
     }
 }

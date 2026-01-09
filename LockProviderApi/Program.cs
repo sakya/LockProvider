@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Text.Json.Serialization;
 using LockProviderApi.Grpc;
 using LockProviderApi.Tcp;
 
@@ -14,6 +15,7 @@ public class Program
         ThreadPool.GetMaxThreads(out _, out var maxIo);
         ThreadPool.SetMinThreads(workerThreads: 2000, completionPortThreads: maxIo);
         var builder = WebApplication.CreateBuilder(args);
+        var configuration = builder.Configuration;
 
         builder.WebHost.ConfigureKestrel(options =>
         {
@@ -32,7 +34,11 @@ public class Program
         });
         builder.Services.AddGrpcReflection();
 
-        builder.Services.AddControllers();
+        builder.Services.AddControllers()
+            .AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+            });
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen(c =>
         {
@@ -46,22 +52,27 @@ public class Program
 
         var app = builder.Build();
         var pLogger = app.Services.GetRequiredService<ILogger<Program>>();
-        pLogger.LogInformation("LockProviderApi v{version}", Assembly.GetEntryAssembly()?.GetName().Version?.ToString());
+
+        var assembly = Assembly.GetEntryAssembly();
+        pLogger.LogInformation("LockProviderApi v{version}", assembly?.GetName().Version?.ToString());
+        if (assembly?.GetCustomAttribute(typeof(AssemblyCopyrightAttribute)) is AssemblyCopyrightAttribute ca) {
+            pLogger.LogInformation("{copyright}", ca.Copyright);
+        }
+
+        var lockProvider = new LockProvider.LockProvider(configuration.GetValue<int>("MaxLockTimeToLive"));
 
         var logger = app.Services.GetRequiredService<ILogger<LockProvider.LockProvider>>();
-        var lockProvider = Utils.Singleton.GetLockProvider();
-        if (lockProvider.Log == null) {
-            lockProvider.Log = (level, message) =>
-            {
-                switch (level) {
-                    case LockProvider.LockProvider.LockLogLevel.Debug: logger.LogDebug(message); break;
-                    case LockProvider.LockProvider.LockLogLevel.Info: logger.LogInformation(message); break;
-                    case LockProvider.LockProvider.LockLogLevel.Warning: logger.LogWarning(message); break;
-                    case LockProvider.LockProvider.LockLogLevel.Error: logger.LogError(message); break;
-                    default: logger.LogInformation(message); break;
-                }
-            };
-        }
+        lockProvider.Log = (level, message) =>
+        {
+            switch (level) {
+                case LockProvider.LockProvider.LockLogLevel.Debug: logger.LogDebug("{message}", message); break;
+                case LockProvider.LockProvider.LockLogLevel.Info: logger.LogInformation("{message}", message); break;
+                case LockProvider.LockProvider.LockLogLevel.Warning: logger.LogWarning("{message}", message); break;
+                case LockProvider.LockProvider.LockLogLevel.Error: logger.LogError("{message}", message); break;
+                default: logger.LogInformation("{message}", message); break;
+            }
+        };
+        Utils.Singleton.InitLockProvider(lockProvider);
 
         app.UseSwagger();
         app.UseSwaggerUI();

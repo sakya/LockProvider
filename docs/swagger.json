@@ -1,7 +1,7 @@
 {
   "openapi": "3.0.4",
   "info": {
-    "title": "LockProviderApi, Version=1.2.2.0, Culture=neutral, PublicKeyToken=null",
+    "title": "LockProviderApi, Version=1.3.0.0, Culture=neutral, PublicKeyToken=null",
     "version": "1.0"
   },
   "paths": {
@@ -323,6 +323,12 @@
             "type": "string",
             "description": "The UTC time the lock was acquired",
             "format": "date-time"
+          },
+          "expiresAt": {
+            "type": "string",
+            "description": "The UTC time the lock will expire",
+            "format": "date-time",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -353,6 +359,12 @@
             "type": "string",
             "description": "The lock name",
             "nullable": true
+          },
+          "expiresAt": {
+            "type": "string",
+            "description": "The UTC time the lock will expire",
+            "format": "date-time",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -382,6 +394,12 @@
           "name": {
             "type": "string",
             "description": "The lock name",
+            "nullable": true
+          },
+          "expiresAt": {
+            "type": "string",
+            "description": "The UTC time the lock will expire",
+            "format": "date-time",
             "nullable": true
           },
           "locks": {
