@@ -46,7 +46,12 @@ public class Program
 
         var app = builder.Build();
         var pLogger = app.Services.GetRequiredService<ILogger<Program>>();
-        pLogger.LogInformation("LockProviderApi v{version}", Assembly.GetEntryAssembly()?.GetName().Version?.ToString());
+
+        var assembly = Assembly.GetEntryAssembly();
+        pLogger.LogInformation("LockProviderApi v{version}", assembly?.GetName().Version?.ToString());
+        if (assembly?.GetCustomAttribute(typeof(AssemblyCopyrightAttribute)) is AssemblyCopyrightAttribute ca) {
+            pLogger.LogInformation("{copyright}", ca.Copyright);
+        }
 
         var logger = app.Services.GetRequiredService<ILogger<LockProvider.LockProvider>>();
         var lockProvider = Utils.Singleton.GetLockProvider();
@@ -54,11 +59,11 @@ public class Program
             lockProvider.Log = (level, message) =>
             {
                 switch (level) {
-                    case LockProvider.LockProvider.LockLogLevel.Debug: logger.LogDebug(message); break;
-                    case LockProvider.LockProvider.LockLogLevel.Info: logger.LogInformation(message); break;
-                    case LockProvider.LockProvider.LockLogLevel.Warning: logger.LogWarning(message); break;
-                    case LockProvider.LockProvider.LockLogLevel.Error: logger.LogError(message); break;
-                    default: logger.LogInformation(message); break;
+                    case LockProvider.LockProvider.LockLogLevel.Debug: logger.LogDebug("{message}", message); break;
+                    case LockProvider.LockProvider.LockLogLevel.Info: logger.LogInformation("{message}", message); break;
+                    case LockProvider.LockProvider.LockLogLevel.Warning: logger.LogWarning("{message}", message); break;
+                    case LockProvider.LockProvider.LockLogLevel.Error: logger.LogError("{message}", message); break;
+                    default: logger.LogInformation("{message}", message); break;
                 }
             };
         }

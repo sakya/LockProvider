@@ -1,7 +1,7 @@
 {
   "openapi": "3.0.4",
   "info": {
-    "title": "LockProviderApi, Version=1.2.2.0, Culture=neutral, PublicKeyToken=null",
+    "title": "LockProviderApi, Version=1.3.0.0, Culture=neutral, PublicKeyToken=null",
     "version": "1.0"
   },
   "paths": {

@@ -13,7 +13,7 @@ public class LockProviderTests
         await using var lp = new LockProvider.LockProvider();
 
         var ex = Assert.ThrowsAsync<ArgumentException>(async () => await lp.AcquireLock("", "lock_1", 1));
-        Assert.That(ex, Is.Not.EqualTo(null));
+        Assert.That(ex, Is.Not.Null);
     }
 
     [Test]
@@ -22,7 +22,7 @@ public class LockProviderTests
         await using var lp = new LockProvider.LockProvider();
 
         var ex = Assert.ThrowsAsync<ArgumentException>(async () => await lp.AcquireLock("Test", "", 1));
-        Assert.That(ex, Is.Not.EqualTo(null));
+        Assert.That(ex, Is.Not.Null);
     }
 
     [Test]
@@ -31,7 +31,7 @@ public class LockProviderTests
         await using var lp = new LockProvider.LockProvider();
 
         var res = await lp.AcquireLock("Test", "lock_1", 1);
-        Assert.That(res, Is.EqualTo(true));
+        Assert.That(res, Is.Not.Null);
 
         var count = await lp.GetLocksCount();
         Assert.That(count, Is.EqualTo(1));
@@ -42,14 +42,14 @@ public class LockProviderTests
     {
         await using var lp = new LockProvider.LockProvider();
 
-        var res = await lp.AcquireLock("Test", "lock_1", 1);
-        Assert.That(res, Is.EqualTo(true));
+        var aRes = await lp.AcquireLock("Test", "lock_1", 1);
+        Assert.That(aRes, Is.Not.Null);
 
         var count = await lp.GetLocksCount();
         Assert.That(count, Is.EqualTo(1));
 
-        res = await lp.ReleaseLock("Test", "lock_1");
-        Assert.That(res, Is.EqualTo(true));
+        var rRes = await lp.ReleaseLock("Test", "lock_1");
+        Assert.That(rRes, Is.EqualTo(true));
 
         count = await lp.GetLocksCount();
         Assert.That(count, Is.EqualTo(0));
@@ -61,10 +61,10 @@ public class LockProviderTests
         await using var lp = new LockProvider.LockProvider();
 
         var res = await lp.AcquireLock("Test", "lock_1", 1);
-        Assert.That(res, Is.EqualTo(true));
+        Assert.That(res, Is.Not.Null);
 
         var ex = Assert.ThrowsAsync<TimeoutException>(async () => await lp.AcquireLock("Test", "lock_1", 1));
-        Assert.That(ex, Is.Not.EqualTo(null));
+        Assert.That(ex, Is.Not.Null);
     }
 
     [Test]
@@ -79,7 +79,7 @@ public class LockProviderTests
         Assert.That(initiallyLocked, Is.False, "Lock should not exist initially");
 
         var acquired = await lp.AcquireLock(owner, lockName, timeoutSeconds);
-        Assert.That(acquired, Is.True, "Failed to acquire lock");
+        Assert.That(acquired, Is.Not.Null, "Failed to acquire lock");
 
         var lockedAfterAcquire = await lp.IsLocked(owner, lockName);
         Assert.That(lockedAfterAcquire, Is.True, "Lock should exist after acquire");
@@ -135,7 +135,7 @@ public class LockProviderTests
         const string lockName = "expirable-lock";
 
         var acquired = await lp.AcquireLock(owner, lockName, timeout: 1, timeToLive: 2);
-        Assert.That(acquired, Is.True, "Failed to acquire lock");
+        Assert.That(acquired, Is.Not.Null, "Failed to acquire lock");
 
         var isLocked = await lp.IsLocked(owner, lockName);
         Assert.That(isLocked, Is.True, "Lock should exist right after acquisition");
@@ -146,7 +146,7 @@ public class LockProviderTests
         Assert.That(isLocked, Is.False, "Lock should be expired and released after TTL");
 
         acquired = await lp.AcquireLock(owner, lockName, timeout: 1);
-        Assert.That(acquired, Is.True, "Failed to re-acquire lock after expiration");
+        Assert.That(acquired, Is.Not.Null, "Failed to re-acquire lock after expiration");
     }
 
     [Test]
@@ -167,7 +167,7 @@ public class LockProviderTests
             tasks[i] = Task.Run(async () =>
             {
                 var acquired = await lp.AcquireLock(owner, lockName, timeoutSeconds);
-                Assert.That(acquired, Is.True, "Failed to acquire lock");
+                Assert.That(acquired, Is.Not.Null, "Failed to acquire lock");
 
                 try {
                     var current = Interlocked.Increment(ref exclusiveCounter);
