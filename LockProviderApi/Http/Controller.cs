@@ -160,7 +160,6 @@ public class LockController : ControllerBase
             Name = request.Name,
             ExpiresAt = lockInfo.ExpiresAt,
             Result = true,
-
         };
     }
 
