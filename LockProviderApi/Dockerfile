@@ -1,4 +1,8 @@
 ﻿FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
+
+ENV DOTNET_GC_SERVER=1
+ENV DOTNET_GC_CONCURRENT=1
+
 USER $APP_UID
 WORKDIR /app
 EXPOSE 5000
