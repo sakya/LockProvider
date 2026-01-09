@@ -323,6 +323,12 @@
             "type": "string",
             "description": "The UTC time the lock was acquired",
             "format": "date-time"
+          },
+          "expireAt": {
+            "type": "string",
+            "description": "The UTC time the lock will expire",
+            "format": "date-time",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -353,6 +359,12 @@
             "type": "string",
             "description": "The lock name",
             "nullable": true
+          },
+          "expireAt": {
+            "type": "string",
+            "description": "The UTC time the lock will expire",
+            "format": "date-time",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -382,6 +394,12 @@
           "name": {
             "type": "string",
             "description": "The lock name",
+            "nullable": true
+          },
+          "expireAt": {
+            "type": "string",
+            "description": "The UTC time the lock will expire",
+            "format": "date-time",
             "nullable": true
           },
           "locks": {

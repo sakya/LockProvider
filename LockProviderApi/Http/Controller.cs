@@ -101,7 +101,8 @@ public class LockController : ControllerBase
                 {
                     Owner = l.Owner,
                     Name = l.Name,
-                    AcquiredAt = l.AcquiredAt
+                    AcquiredAt = l.AcquiredAt,
+                    ExpireAt = l.ExpireAt,
                 });
             }
 
@@ -126,10 +127,11 @@ public class LockController : ControllerBase
     [HttpPost("acquire")]
     public async Task<ActionResult<LockResponse>> Acquire([FromBody] AcquireRequest request)
     {
+        global::LockProvider.LockProvider.SemaphoreInfo? lockInfo = null;
         try {
             var sw = new Stopwatch();
             sw.Start();
-            await LockProvider.AcquireLock(request.Owner, request.Name, request.Timeout, request.TimeToLive);
+            lockInfo = await LockProvider.AcquireLock(request.Owner, request.Name, request.Timeout, request.TimeToLive);
             sw.Stop();
             _logger.LogDebug("Acquired lock '{RequestName}' ({RequestOwner}), elapsed: {SwElapsed}", request.Name, request.Owner, sw.Elapsed);
         } catch (TimeoutException) {
@@ -156,7 +158,9 @@ public class LockController : ControllerBase
         {
             Owner = request.Owner,
             Name = request.Name,
-            Result = true
+            ExpireAt = lockInfo.ExpireAt,
+            Result = true,
+
         };
     }
 

@@ -44,6 +44,7 @@ message LockResponse {
   string result = 3;
   string error = 4;
   string timeStamp = 5;
+  string expireAt = 6;
 }
 
 message LocksListRequest {
@@ -55,6 +56,7 @@ message LockInfo {
   string owner = 1;
   string name = 2;
   string acquiredAt = 3;
+  string expireAt = 4;
 }
 
 message LocksListResponse {

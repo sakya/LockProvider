@@ -219,7 +219,7 @@ public sealed partial class TcpConnectionHandler : IThreadPoolWorkItem, IDisposa
     {
         try {
             var sw = Stopwatch.StartNew();
-            await LockProvider.AcquireLock(command.Owner, command.Name, command.Timeout, command.TimeToLive);
+            var lockInfo = await LockProvider.AcquireLock(command.Owner, command.Name, command.Timeout, command.TimeToLive);
             sw.Stop();
 
             _logger.LogDebug("Acquired lock '{CommandName}' ({CommandOwner}), elapsed: {SwElapsed}", command.Name, command.Owner, sw.Elapsed);
@@ -229,6 +229,7 @@ public sealed partial class TcpConnectionHandler : IThreadPoolWorkItem, IDisposa
                 { "Id", command.Id },
                 { "Owner", command.Owner },
                 { "Name", command.Name },
+                { "ExpireAt", lockInfo.ExpireAt?.ToString("o", CultureInfo.InvariantCulture) }
             });
         }
         catch (TimeoutException) {

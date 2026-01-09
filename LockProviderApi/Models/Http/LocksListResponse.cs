@@ -16,6 +16,10 @@ public class LocksListResponse : LockResponse
         /// The UTC time the lock was acquired
         /// </summary>
         public DateTime AcquiredAt { get; set; }
+        /// <summary>
+        /// The UTC time the lock will expire
+        /// </summary>
+        public DateTime? ExpireAt { get; set; }
     }
 
     /// <summary>
