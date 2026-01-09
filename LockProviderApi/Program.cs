@@ -59,7 +59,9 @@ public class Program
             pLogger.LogInformation("{copyright}", ca.Copyright);
         }
 
-        var lockProvider = new LockProvider.LockProvider(configuration.GetValue<int>("MaxLockTimeToLive"));
+        var maxLockTimeToLive = configuration.GetValue<int>("MaxLockTimeToLive");
+        pLogger.LogInformation("MaxLockTimeToLive: {MaxLockTimeToLive}", maxLockTimeToLive);
+        var lockProvider = new LockProvider.LockProvider(maxLockTimeToLive);
 
         var logger = app.Services.GetRequiredService<ILogger<LockProvider.LockProvider>>();
         lockProvider.Log = (level, message) =>
