@@ -15,27 +15,27 @@ public class LockProvider : IAsyncDisposable
     #region classes
     public class SemaphoreInfo
     {
-        public SemaphoreInfo(string owner, string name, DateTime acquiredAt, DateTime? expireAt)
+        public SemaphoreInfo(string owner, string name, DateTime acquiredAt, DateTime? expiresAt)
         {
             Owner = owner;
             Name = name;
             AcquiredAt = acquiredAt;
-            ExpireAt = expireAt;
+            ExpiresAt = expiresAt;
         }
 
         public string Owner { get; set; }
         public string Name { get; set; }
         public DateTime AcquiredAt { get; set; }
-        public DateTime? ExpireAt { get; set; }
-        public bool IsExpired => ExpireAt.HasValue && ExpireAt.Value <= DateTime.UtcNow;
+        public DateTime? ExpiresAt { get; set; }
+        public bool IsExpired => ExpiresAt.HasValue && ExpiresAt.Value <= DateTime.UtcNow;
     }
 
     private class SemaphoreInfoExtended : SemaphoreInfo
     {
         private readonly FifoSemaphore _semaphore;
 
-        public SemaphoreInfoExtended(string owner, string name, FifoSemaphore semaphore, DateTime? expireAt = null) :
-            base(owner, name, DateTime.UtcNow, expireAt)
+        public SemaphoreInfoExtended(string owner, string name, FifoSemaphore semaphore, DateTime? expiresAt = null) :
+            base(owner, name, DateTime.UtcNow, expiresAt)
         {
             _semaphore = semaphore;
         }
@@ -165,12 +165,12 @@ public class LockProvider : IAsyncDisposable
         try {
             if (!_locks.TryGetValue(key, out semaphore)) {
                 // The initial count is zero, the lock is acquired
-                DateTime? expireAt = null;
+                DateTime? expiresAt = null;
                 if (timeToLive > 0) {
-                    expireAt = DateTime.UtcNow.AddSeconds(timeToLive);
+                    expiresAt = DateTime.UtcNow.AddSeconds(timeToLive);
                 }
 
-                semaphore = new SemaphoreInfoExtended(owner, name, new FifoSemaphore(0, 1), expireAt);
+                semaphore = new SemaphoreInfoExtended(owner, name, new FifoSemaphore(0, 1), expiresAt);
                 _locks[key] = semaphore;
                 createdNew = true;
             }
@@ -185,7 +185,7 @@ public class LockProvider : IAsyncDisposable
 
         await RemoveFromWaitingLocks(key);
 
-        return new SemaphoreInfo(semaphore.Owner, semaphore.Name, semaphore.AcquiredAt, semaphore.ExpireAt);
+        return new SemaphoreInfo(semaphore.Owner, semaphore.Name, semaphore.AcquiredAt, semaphore.ExpiresAt);
     }
 
     /// <summary>
@@ -249,7 +249,7 @@ public class LockProvider : IAsyncDisposable
             if (regex != null && !regex.IsMatch(s.Name))
                 continue;
 
-            res.Add(new SemaphoreInfo(s.Owner, s.Name, s.AcquiredAt, s.ExpireAt));
+            res.Add(new SemaphoreInfo(s.Owner, s.Name, s.AcquiredAt, s.ExpiresAt));
         }
 
         return res
@@ -317,8 +317,8 @@ public class LockProvider : IAsyncDisposable
                 try {
                     var now = DateTime.UtcNow;
                     expiredLocks = _locks
-                        .Where(kvp => kvp.Value.ExpireAt.HasValue && kvp.Value.ExpireAt <= now)
-                        .Select(kvp => new SemaphoreInfo(kvp.Value.Owner, kvp.Value.Name, kvp.Value.AcquiredAt, kvp.Value.ExpireAt))
+                        .Where(kvp => kvp.Value.ExpiresAt.HasValue && kvp.Value.ExpiresAt <= now)
+                        .Select(kvp => new SemaphoreInfo(kvp.Value.Owner, kvp.Value.Name, kvp.Value.AcquiredAt, kvp.Value.ExpiresAt))
                         .ToList();
                 } finally {
                     _mainLock.Release();

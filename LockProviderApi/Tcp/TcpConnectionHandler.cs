@@ -229,7 +229,7 @@ public sealed partial class TcpConnectionHandler : IThreadPoolWorkItem, IDisposa
                 { "Id", command.Id },
                 { "Owner", command.Owner },
                 { "Name", command.Name },
-                { "ExpireAt", lockInfo.ExpireAt?.ToString("o", CultureInfo.InvariantCulture) }
+                { "ExpiresAt", lockInfo.ExpiresAt?.ToString("o", CultureInfo.InvariantCulture) }
             });
         }
         catch (TimeoutException) {

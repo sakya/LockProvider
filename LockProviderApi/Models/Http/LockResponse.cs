@@ -13,5 +13,5 @@ public class LockResponse : ResponseBase
     /// <summary>
     /// The UTC time the lock will expire
     /// </summary>
-    public DateTime? ExpireAt { get; set; }
+    public DateTime? ExpiresAt { get; set; }
 }

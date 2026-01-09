@@ -102,7 +102,7 @@ public class LockController : ControllerBase
                     Owner = l.Owner,
                     Name = l.Name,
                     AcquiredAt = l.AcquiredAt,
-                    ExpireAt = l.ExpireAt,
+                    ExpiresAt = l.ExpiresAt,
                 });
             }
 
@@ -158,7 +158,7 @@ public class LockController : ControllerBase
         {
             Owner = request.Owner,
             Name = request.Name,
-            ExpireAt = lockInfo.ExpireAt,
+            ExpiresAt = lockInfo.ExpiresAt,
             Result = true,
 
         };

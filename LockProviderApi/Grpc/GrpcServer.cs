@@ -53,7 +53,7 @@ public class GrpcServer : LockProviderGrpc.LockProvider.LockProviderBase
             Owner = request.Owner,
             Name = request.Name,
             Result = true.ToString(),
-            ExpireAt = lockInfo?.ExpireAt?.ToString("o", CultureInfo.InvariantCulture),
+            ExpiresAt = lockInfo?.ExpiresAt?.ToString("o", CultureInfo.InvariantCulture),
             TimeStamp = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture)
         };
     }
@@ -201,7 +201,7 @@ public class GrpcServer : LockProviderGrpc.LockProvider.LockProviderBase
                     Owner = l.Owner,
                     Name = l.Name,
                     AcquiredAt = l.AcquiredAt.ToString("o", CultureInfo.InvariantCulture),
-                    ExpireAt = l.ExpireAt?.ToString("o", CultureInfo.InvariantCulture),
+                    ExpiresAt = l.ExpiresAt?.ToString("o", CultureInfo.InvariantCulture),
                 });
             }
 

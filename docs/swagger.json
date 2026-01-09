@@ -324,7 +324,7 @@
             "description": "The UTC time the lock was acquired",
             "format": "date-time"
           },
-          "expireAt": {
+          "expiresAt": {
             "type": "string",
             "description": "The UTC time the lock will expire",
             "format": "date-time",
@@ -360,7 +360,7 @@
             "description": "The lock name",
             "nullable": true
           },
-          "expireAt": {
+          "expiresAt": {
             "type": "string",
             "description": "The UTC time the lock will expire",
             "format": "date-time",
@@ -396,7 +396,7 @@
             "description": "The lock name",
             "nullable": true
           },
-          "expireAt": {
+          "expiresAt": {
             "type": "string",
             "description": "The UTC time the lock will expire",
             "format": "date-time",
